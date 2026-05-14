@@ -1,0 +1,42 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  body {
+    background: #F2EDE3;
+    color: #1a1a1a;
+    font-family: var(--font-manrope), system-ui, sans-serif;
+  }
+}
+
+@layer utilities {
+  .font-serif {
+    font-feature-settings: 'ss01';
+  }
+  .font-mono {
+    font-feature-settings: 'ss02';
+  }
+  .nums {
+    font-variant-numeric: tabular-nums;
+  }
+  .hairline {
+    background: #C9BFAB;
+    height: 1px;
+  }
+  .btn-quiet {
+    transition: opacity 200ms ease;
+  }
+  .btn-quiet:hover {
+    opacity: 0.5;
+  }
+  .lift-on-hover {
+    transition: transform 250ms ease, box-shadow 250ms ease;
+  }
+  .lift-on-hover:hover {
+    transform: translateY(-1px);
+  }
+  .mode-pill {
+    transition: color 180ms ease, border-color 180ms ease;
+  }
+}
