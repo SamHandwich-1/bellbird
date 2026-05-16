@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, useRef, useEffect } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { Settings } from 'lucide-react';
@@ -12,8 +13,29 @@ const MODES = [
   { href: '/cycles', label: 'Cycles' },
 ];
 
-export function Header() {
+function isAuthPath(pathname: string): boolean {
+  return pathname.startsWith('/login') || pathname.startsWith('/auth/');
+}
+
+type HeaderUser = { email: string | null } | null;
+
+export function Header({ user }: { user: HeaderUser }) {
   const pathname = usePathname() ?? '';
+  const [menuOpen, setMenuOpen] = useState(false);
+  const menuRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    if (!menuOpen) return;
+    function onDocClick(e: MouseEvent) {
+      if (menuRef.current && !menuRef.current.contains(e.target as Node)) {
+        setMenuOpen(false);
+      }
+    }
+    document.addEventListener('mousedown', onDocClick);
+    return () => document.removeEventListener('mousedown', onDocClick);
+  }, [menuOpen]);
+
+  if (isAuthPath(pathname)) return null;
 
   return (
     <header style={{ borderBottom: `1px solid ${tokens.hairline}` }}>
@@ -50,13 +72,64 @@ export function Header() {
               </Link>
             );
           })}
-          <button
-            type="button"
-            className="btn-quiet text-whisper"
-            aria-label="Settings"
-          >
-            <Settings size={14} strokeWidth={1.5} />
-          </button>
+
+          <div ref={menuRef} className="relative">
+            <button
+              type="button"
+              onClick={() => setMenuOpen((v) => !v)}
+              className="btn-quiet text-whisper"
+              aria-label="Settings"
+              aria-haspopup="true"
+              aria-expanded={menuOpen}
+            >
+              <Settings size={14} strokeWidth={1.5} />
+            </button>
+
+            {menuOpen && (
+              <div
+                className="absolute right-0 mt-3 w-64 z-10 p-4"
+                style={{
+                  background: tokens.paper,
+                  border: `1px solid ${tokens.hairline}`,
+                }}
+              >
+                {user ? (
+                  <>
+                    <div
+                      className="font-sans text-[10px] tracking-[0.22em] uppercase mb-1"
+                      style={{ color: tokens.whisper }}
+                    >
+                      Signed in as
+                    </div>
+                    <div
+                      className="font-mono text-[12px] mb-4 break-all"
+                      style={{ color: tokens.ink }}
+                    >
+                      {user.email ?? 'unknown'}
+                    </div>
+                    <form action="/auth/sign-out" method="post">
+                      <button
+                        type="submit"
+                        className="font-sans text-[10px] tracking-[0.22em] uppercase btn-quiet"
+                        style={{ color: tokens.ink }}
+                      >
+                        Sign out
+                      </button>
+                    </form>
+                  </>
+                ) : (
+                  <Link
+                    href="/login"
+                    onClick={() => setMenuOpen(false)}
+                    className="font-sans text-[10px] tracking-[0.22em] uppercase btn-quiet"
+                    style={{ color: tokens.ink }}
+                  >
+                    Sign in
+                  </Link>
+                )}
+              </div>
+            )}
+          </div>
         </nav>
       </div>
     </header>

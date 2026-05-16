@@ -12,8 +12,13 @@ function modeFromPath(pathname: string): string {
   return 'Bellbird';
 }
 
+function isAuthPath(pathname: string): boolean {
+  return pathname.startsWith('/login') || pathname.startsWith('/auth/');
+}
+
 export function Footer() {
   const pathname = usePathname() ?? '';
+  if (isAuthPath(pathname)) return null;
   const mode = modeFromPath(pathname);
 
   return (
