@@ -142,6 +142,12 @@ export function ConversationListRow({ conversation }: { conversation: Conversati
     ? 'opacity-100 pointer-events-auto'
     : 'opacity-0 pointer-events-none group-hover:opacity-100 group-hover:pointer-events-auto';
 
+  // Inverse of `affordanceClasses` — cells that should fade out exactly when
+  // the affordances fade in (hover OR confirming both count).
+  const cellHideClasses = confirming
+    ? 'opacity-0 transition-opacity'
+    : 'transition-opacity group-hover:opacity-0';
+
   return (
     <div
       className="group relative lift-on-hover grid grid-cols-12 gap-3 items-baseline py-3"
@@ -187,17 +193,17 @@ export function ConversationListRow({ conversation }: { conversation: Conversati
         {statusLabel(conversation.status)}
       </div>
 
-      {/* Date */}
+      {/* Date — fades whenever affordances are visible (hover OR confirming) */}
       <div
-        className="col-span-1 font-mono text-[10px] text-right"
+        className={`col-span-1 font-mono text-[10px] text-right ${cellHideClasses}`}
         style={{ color: tokens.whisper }}
       >
         {dateStr}
       </div>
 
-      {/* Chevron — fades out on hover so the affordances can take the corner */}
+      {/* Chevron — same fade rule as the date cell */}
       <div
-        className="col-span-1 text-right transition-opacity group-hover:opacity-0"
+        className={`col-span-1 text-right ${cellHideClasses}`}
         style={{ color: tokens.whisper }}
       >
         <ChevronRight size={12} strokeWidth={1.5} />
