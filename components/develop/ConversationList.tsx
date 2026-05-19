@@ -1,41 +1,6 @@
-import Link from 'next/link';
-import { ChevronRight } from 'lucide-react';
 import { tokens } from '@/lib/tokens';
 import type { Conversation } from '@/lib/types';
-
-function statusLabel(s: Conversation['status']): string {
-  switch (s) {
-    case 'open':
-      return 'Open';
-    case 'phase_2':
-      return 'Structuring';
-    case 'phase_3':
-      return 'Stress test';
-    case 'phase_4':
-      return 'Adjudicating';
-    case 'completed':
-      return 'Completed';
-    case 'discarded':
-      return 'Discarded';
-  }
-}
-
-function statusColor(s: Conversation['status']): string {
-  switch (s) {
-    case 'completed':
-      return tokens.sage;
-    case 'discarded':
-      return tokens.terracotta;
-    case 'phase_4':
-      return tokens.chime;
-    case 'phase_3':
-      return tokens.amber;
-    case 'phase_2':
-      return tokens.steel;
-    default:
-      return tokens.whisper;
-  }
-}
+import { ConversationListRow } from './ConversationListRow';
 
 const GROUPS: Array<{ key: 'in_progress' | 'completed' | 'discarded'; label: string }> = [
   { key: 'in_progress', label: 'In progress' },
@@ -83,39 +48,7 @@ export function ConversationList({ conversations }: { conversations: Conversatio
             </div>
             <div className="space-y-3">
               {list.map((c) => (
-                <Link
-                  key={c.id}
-                  href={`/develop/${c.id}`}
-                  className="lift-on-hover grid grid-cols-12 gap-3 items-baseline py-3 cursor-pointer"
-                  style={{ borderBottom: `1px solid ${tokens.surface}` }}
-                >
-                  <div className="col-span-7">
-                    <div
-                      className="font-serif text-[19px] leading-[1.3]"
-                      style={{ fontWeight: 360, color: tokens.ink }}
-                    >
-                      {c.title ?? 'Untitled conversation'}
-                    </div>
-                  </div>
-                  <div
-                    className="col-span-3 font-sans text-[10px] tracking-[0.16em] uppercase"
-                    style={{ color: statusColor(c.status) }}
-                  >
-                    {statusLabel(c.status)}
-                  </div>
-                  <div
-                    className="col-span-1 font-mono text-[10px] text-right"
-                    style={{ color: tokens.whisper }}
-                  >
-                    {new Date(c.updated_at).toLocaleDateString('en', {
-                      month: 'short',
-                      day: 'numeric',
-                    })}
-                  </div>
-                  <div className="col-span-1 text-right" style={{ color: tokens.whisper }}>
-                    <ChevronRight size={12} strokeWidth={1.5} />
-                  </div>
-                </Link>
+                <ConversationListRow key={c.id} conversation={c} />
               ))}
             </div>
           </section>

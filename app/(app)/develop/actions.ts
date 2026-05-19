@@ -40,6 +40,47 @@ export async function discardConversation(id: string): Promise<ActionResult> {
   return { ok: true };
 }
 
+export async function renameConversation(
+  id: string,
+  rawTitle: string | null,
+): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not signed in.' };
+
+  // Trim; empty string -> null. Storing null surfaces "Untitled conversation".
+  const trimmed = rawTitle == null ? null : rawTitle.trim();
+  const title = trimmed === '' ? null : trimmed;
+
+  const { error } = await supabase
+    .from('conversations')
+    .update({ title, updated_at: new Date().toISOString() })
+    .eq('id', id);
+  if (error) return { error: error.message };
+
+  revalidatePath('/develop');
+  revalidatePath(`/develop/${id}`);
+  return { ok: true };
+}
+
+export async function deleteConversation(id: string): Promise<ActionResult> {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) return { error: 'Not signed in.' };
+
+  // Hard delete. FK ON DELETE CASCADE on messages / stress_tests / opus_verdicts
+  // takes care of dependent rows. No soft-delete by design (per plan).
+  const { error } = await supabase.from('conversations').delete().eq('id', id);
+  if (error) return { error: error.message };
+
+  revalidatePath('/develop');
+  return { ok: true };
+}
+
 export async function resetToPhase1(id: string): Promise<ActionResult> {
   const supabase = await createClient();
   const now = new Date().toISOString();

@@ -8,6 +8,7 @@ import { PhaseProgression, type Phase } from './PhaseProgression';
 import { CostMeter, type UsageBreakdown } from './CostMeter';
 import { ChatThread } from './ChatThread';
 import { ComposerBox } from './ComposerBox';
+import { InlineEditableTitle } from './InlineEditableTitle';
 import type { Conversation, Message, StressTest, OpusVerdict } from '@/lib/types';
 import type { StructuredThesis } from '@/lib/ai/schemas';
 import { resetToPhase1 } from '@/app/(app)/develop/actions';
@@ -264,12 +265,7 @@ export function DevelopChat({
         >
           Develop
         </div>
-        <h1
-          className="font-serif text-[36px] tracking-tight"
-          style={{ fontWeight: 340 }}
-        >
-          {conversation.title ?? 'New thesis'}
-        </h1>
+        <InlineEditableTitle conversation={conversation} />
       </div>
 
       <div className="mt-8 mb-10">
