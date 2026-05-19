@@ -35,3 +35,6 @@ yarn-error.log*
 
 # logs
 *.log
+
+# prompt harness outputs
+scripts/prompt-harness/outputs/
