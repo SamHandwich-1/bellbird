@@ -71,6 +71,62 @@ export interface Trade {
   created_at: string;
 }
 
+// Manual current price (per ticker). Source-of-truth for the "Current" column
+// in the Portfolio holdings view until Polygon live prices land in v1.2.
+export interface CurrentPrice {
+  ticker: string;
+  price: number;
+  currency: string;
+  updated_at: string;
+}
+
+// Derived view — one Holding per ticker, computed from the chronological trade
+// sequence + the manual current price. NOT stored in the DB. See
+// lib/portfolio/aggregate.ts for the computation.
+export interface Holding {
+  ticker: string;
+  // Trade-derived
+  net_quantity: number;          // sum(buys.qty) − sum(sells.qty)
+  cost_basis: number;            // remaining cost basis after avg-cost sell reductions
+  avg_cost: number;              // cost_basis ÷ net_quantity (the "Entry" column)
+  realized_pnl: number;          // accumulated over historical sells
+  // Lifetime sum of buy-side cost basis on this ticker — never reduced by sells.
+  // Used by summarisePortfolio to compute realized% when all positions are closed.
+  total_purchased_cost_basis: number;
+  // Most-recent thesis_id seen on this ticker's trades. Null if no trade ever
+  // linked the ticker to a thesis.
+  thesis_id: string | null;
+  // Current-price-derived (null when no current price has been set)
+  current_price: number | null;
+  current_value: number | null;
+  unrealized_pnl: number | null;       // absolute, AUD
+  unrealized_pnl_pct: number | null;   // percent of cost_basis
+  // Filled at the portfolio level by aggregateHoldings (not aggregateHolding)
+  weight_pct: number;            // cost_basis ÷ total portfolio cost_basis × 100
+}
+
+// Per-thesis rollup of holdings + performance.
+export interface ThesisPerformance {
+  thesis_id: string | null;            // null bucket = "Unassigned"
+  thesis_name: string | null;
+  holdings: Holding[];
+  total_cost_basis: number;
+  total_current_value: number;         // sum of holdings.current_value (null → 0)
+  total_unrealized_pnl: number;
+  total_realized_pnl: number;
+}
+
+// Top-of-page metrics on /portfolio.
+export interface PortfolioSummary {
+  holding_count: number;
+  thesis_count: number;
+  total_cost_basis: number;
+  total_current_value: number;
+  total_unrealized_pnl: number;
+  total_realized_pnl: number;
+  blended_return_pct: number;          // total_unrealized_pnl ÷ total_cost_basis × 100
+}
+
 export interface Conversation {
   id: string;
   thesis_id: string | null;

@@ -11,6 +11,7 @@ import {
   deletePosition,
 } from '@/app/(app)/library/actions';
 import { tokens } from '@/lib/tokens';
+import { OpenTradeFromPositionButton } from './OpenTradeFromPositionButton';
 
 const SIDES: PositionSide[] = ['long', 'short', 'hedge'];
 
@@ -182,16 +183,19 @@ function PositionRow({ position }: { position: Position }) {
         style={{ color: tokens.ash, outline: 'none' }}
       />
       <div className="col-span-1 text-right">
-        <button
-          type="button"
-          onClick={remove}
-          disabled={pending}
-          className="btn-quiet"
-          aria-label="Delete position"
-          style={{ color: tokens.whisper }}
-        >
-          <Trash2 size={12} strokeWidth={1.5} />
-        </button>
+        <div className="flex justify-end gap-2">
+          <OpenTradeFromPositionButton position={position} />
+          <button
+            type="button"
+            onClick={remove}
+            disabled={pending}
+            className="btn-quiet"
+            aria-label="Delete position"
+            style={{ color: tokens.whisper }}
+          >
+            <Trash2 size={12} strokeWidth={1.5} />
+          </button>
+        </div>
       </div>
     </div>
   );
