@@ -507,3 +507,42 @@ The biggest risk to this build is *scope creep mid-build*. Resist the urge to ad
 - **`references/BOWERBIRD_BRAND_GUIDE.md`** (if present) — Brand voice and palette inspiration.
 
 When in doubt about design, defer to the mockup. When in doubt about voice, defer to the brand guide. When in doubt about data structure, defer to this document.
+
+---
+
+## 9. Post-v1 backlog
+
+Logged after v1 shipped (2026-05-22). Items are surfaced and grouped, not prioritised against each other beyond the per-group notes. Live with the dashboard for a stretch before deciding sequencing.
+
+### A. Original Turn 3 backlog (flagged in Turn 3 verification, never built)
+
+1. **Attachments in Develop chat — higher priority than the other Turn 3 items.** Currently the pipeline can only ingest pasted text, which is a structural limit on the Develop mode's usefulness (no images, charts, transcripts, PDFs). Anthropic API supports image + PDF base64 in messages; UI needs a file picker + Supabase Storage upload + reference passthrough to Phase 1 prompts. Closest thing to a workflow blocker in the original Turn 3 backlog.
+2. **Iterate UX — preserve prior state.** Currently Iterate replaces the prior thesis/positions/stress-test output rather than preserving it. Redesign to keep prior state visible or open an iteration sub-discussion below the current one.
+3. **Prompt prefill chips.** Pre-selected prompt options based on the pushback in the previous turn — surface a few one-tap continuations rather than a blank composer.
+4. **Table rendering in chat.** Markdown tables currently render as plain text. Wire markdown table support into the chat turn renderer.
+5. **Open committed theses to add new information.** Once a thesis is committed to the Library, there's no path to update via the Develop pipeline without starting a new conversation. Add a "re-open in Develop" flow that loads thesis context as Phase 1 starting state.
+
+### B. Turn 4 polish (logged during Portfolio verification)
+
+6. **Share count column on holdings rows.** Holdings list shows ticker / cost basis / current value / P&L but not the share count. Add column.
+7. **Current-price-persists-after-trade-delete quirk.** When the last trade for a ticker is deleted, the manually-entered `current_prices` row for that ticker survives. Should clear automatically when net-quantity goes to zero.
+
+### C. Turn 5 polish (logged during Cycles verification)
+
+8. **Buffett z gauge/grid contradiction.** Gauge cites `buffett_z` from `cycle_readings.contributing_series` (+2.57); grid cell shows `z_score_30y` from latest `macro_indicators` row (-1.74). Same series, opposite signs. Almost certainly a divergence between `buildCycleReadings`' 200-day cutoff window and `getIndicatorSnapshots`' global query. Fix by aligning both surfaces to the same stored z value rather than re-deriving from a subset.
+9. **HY Credit Spreads only ~3y of history.** `BAMLH0A0HYM2` returned 794 daily rows from FRED on backfill (vs ~7,300 expected for 30y). Z-score implicitly computed against a 3-year window not 30-year, making the current z misleading. Verify FRED history depth with a direct API call; if the cap is fetch-side, paginate or chunk-by-year.
+10. **`upsertSeries` pagination latent bug.** `lib/fred/refresh-job.ts` — the `existing` rows query has no `.limit()`. Same family as the cycles-queries pagination bug fixed in Turn 5. Only affects refresh-mode (90-day window) YoY anchoring on daily series with >1000 historical rows. Add `.limit(10000)` when next touching that file.
+
+### D. Strategic work parked
+
+11. **Phase 1-4 system prompts.** Currently first-draft scaffolding from Claude Code. Real prompts to be developed in dedicated prompt-development chat work — Marks/Mauboussin behavioural specs for Phase 1, fidelity-only Phase 2, Munger inversion for Phase 3, Klarman downside-first for Phase 4. Plus a challenge-loop prompt for contested verdicts. Harness already committed at 31c02db for A/B testing variants.
+
+### E. v1.1+ items (mirroring §6 for one-stop reference)
+
+12. **Watch mode** — triggers + calendar + notifications. v1.1.
+13. **Polygon live prices** — v1.2. Note: `current_prices` table already exists from Turn 4 — partial groundwork done.
+14. **Earnings reviewer integration.** v1.2-1.3.
+15. **News auto-ingestion.** Also addresses the gap of no slot for qualitative macro readings on the Cycles page.
+16. **Mobile-optimized layout.** v1.3.
+17. **Multi-currency support.** AUD-only for v1.
+18. **Options trading** — schema and P/L formula are equities-only in v1. Needs its own schema + P/L formula + UI; treat as its own meaningful scope, not a small extension to the trades table.
