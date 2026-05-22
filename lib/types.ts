@@ -17,13 +17,15 @@ export type ConversationStatus =
   | 'completed'
   | 'discarded';
 export type MessageRole = 'user' | 'assistant';
-export type CycleName = 'credit' | 'equity' | 'juglar';
+export type CycleName = 'credit' | 'market' | 'juglar';
 export type CycleStatus = 'healthy' | 'caution' | 'alert';
 export type IndicatorCategory =
-  | 'rates'
-  | 'credit'
-  | 'equity'
   | 'real_economy'
+  | 'rates'
+  | 'liquidity'
+  | 'credit'
+  | 'capex'
+  | 'equity_valuation'
   | 'sentiment';
 export type TriggerPriority = 'high' | 'medium' | 'low';
 export type TriggerStatus = 'pending' | 'fired' | 'dismissed';
@@ -194,6 +196,31 @@ export interface CycleReading {
   detail: string | null;
   contributing_series: Record<string, unknown> | null;
   created_at: string;
+}
+
+// Manual override per cycle gauge — applied on top of the rules-derived reading
+// at query time. See lib/supabase/cycles-queries.ts → getMergedCycleReadings.
+export interface CycleOverride {
+  cycle_name: CycleName;
+  reading_override: string;
+  override_status: CycleStatus | null;
+  detail_override: string | null;
+  set_at: string;
+  expires_at: string | null;
+}
+
+// What the page actually renders — rules baseline merged with active override.
+export interface MergedCycleReading {
+  cycle_name: CycleName;
+  status: CycleStatus;
+  reading: string;          // override.reading_override OR rules.classification
+  detail: string | null;
+  is_manual: boolean;       // true when an unexpired override is in effect
+  set_at: string | null;    // override.set_at when is_manual, otherwise null
+  rules_status: CycleStatus;          // the underlying rules-derived status, even when overridden
+  rules_reading: string | null;       // the underlying rules-derived reading
+  contributing_series: Record<string, unknown> | null;
+  reading_date: string;
 }
 
 export interface Trigger {

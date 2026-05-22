@@ -1,12 +1,27 @@
-import { StubScreen } from '@/components/shared/StubScreen';
+import { CyclesScreen } from '@/components/cycles/CyclesScreen';
+import {
+  getIndicatorSnapshots,
+  getMergedCycleReadings,
+  getBookDistribution,
+  getLastRefreshTime,
+} from '@/lib/supabase/cycles-queries';
 
-export default function Page() {
+export const dynamic = 'force-dynamic';
+
+export default async function Page() {
+  const [readings, snapshots, distribution, lastRefreshed] = await Promise.all([
+    getMergedCycleReadings(),
+    getIndicatorSnapshots(),
+    getBookDistribution(),
+    getLastRefreshTime(),
+  ]);
+
   return (
-    <StubScreen
-      mode="Cycles"
-      title="The three cycles"
-      turn={5}
-      description="Credit, market, and Juglar cycle gauges driven by thirty years of FRED data. Twelve macro indicators with z-scores against thirty-year history. Daily refresh via Vercel cron. Lands in Turn 5."
+    <CyclesScreen
+      readings={readings}
+      snapshots={snapshots}
+      distribution={distribution}
+      lastRefreshed={lastRefreshed}
     />
   );
 }

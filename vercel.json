@@ -1,0 +1,10 @@
+{
+  "crons": [
+    { "path": "/api/macro/refresh", "schedule": "0 22 * * *" },
+    { "path": "/api/macro/refresh", "schedule": "0 9 * * *" }
+  ],
+  "functions": {
+    "app/api/macro/backfill/route.ts": { "maxDuration": 300 },
+    "app/api/macro/resync/route.ts": { "maxDuration": 120 }
+  }
+}
