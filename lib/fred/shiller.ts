@@ -21,26 +21,52 @@ export type ShillerFetchResult = {
 };
 
 export async function fetchCape(opts?: { startDate?: string }): Promise<ShillerFetchResult> {
+  let yaleErr = '';
   try {
     const observations = await fetchCapeFromYale(opts);
     return { source: 'yale', observations };
   } catch (err) {
-    console.warn(
-      '[shiller] Yale XLS fetch failed, falling back to multpl scrape:',
-      err instanceof Error ? err.message : err,
-    );
+    yaleErr = err instanceof Error ? err.message : String(err);
+    console.warn('[shiller] Yale XLS fetch failed, falling back to multpl scrape. Reason:', yaleErr);
+  }
+  try {
     const observations = await fetchCapeFromMultpl(opts);
     return { source: 'multpl', observations };
+  } catch (err) {
+    const multplErr = err instanceof Error ? err.message : String(err);
+    console.error('[shiller] Both Yale and multpl failed. Yale:', yaleErr, 'Multpl:', multplErr);
+    // Bundle both error messages so the backfill summary surfaces the full picture.
+    throw new Error(`Shiller chain exhausted. YALE → ${yaleErr} || MULTPL → ${multplErr}`);
   }
 }
 
 // ─── Yale Shiller XLS ──────────────────────────────────────────────────────
 
 async function fetchCapeFromYale(opts?: { startDate?: string }): Promise<Datum[]> {
+  console.log('[shiller/yale] GET', YALE_URL);
   const res = await fetch(YALE_URL, { cache: 'no-store' });
-  if (!res.ok) throw new Error(`Yale fetch returned ${res.status}`);
+  const ct = res.headers.get('content-type') ?? '?';
+  const cl = res.headers.get('content-length') ?? '?';
+  console.log(`[shiller/yale] HTTP ${res.status} ct=${ct} len=${cl}`);
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    throw new Error(`Yale HTTP ${res.status} ct=${ct} len=${cl} body="${bodyText.slice(0, 300).replace(/\s+/g, ' ')}"`);
+  }
   const buffer = await res.arrayBuffer();
-  const workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+  // Sniff first bytes — XLS files start with 'D0 CF 11 E0' (OLE2 signature).
+  const head = new Uint8Array(buffer.slice(0, 8));
+  const headHex = [...head].map((b) => b.toString(16).padStart(2, '0')).join(' ');
+  console.log(`[shiller/yale] body bytes=${buffer.byteLength} head=${headHex}`);
+  let workbook;
+  try {
+    workbook = XLSX.read(new Uint8Array(buffer), { type: 'array' });
+  } catch (parseErr) {
+    const headAscii = new TextDecoder('utf-8', { fatal: false }).decode(buffer.slice(0, 200));
+    throw new Error(
+      `Yale XLS parse failed: ${parseErr instanceof Error ? parseErr.message : parseErr}; ` +
+      `ct=${ct} bytes=${buffer.byteLength} headHex=${headHex} headAscii="${headAscii.replace(/\s+/g, ' ').slice(0, 150)}"`,
+    );
+  }
 
   // Sheet name in this file is "Data" (with capital D); fall back to first sheet
   const sheetName = workbook.SheetNames.find((n) => n.toLowerCase() === 'data')
@@ -135,12 +161,20 @@ function parseShillerDate(raw: unknown): string | null {
 // ─── multpl.com fallback ───────────────────────────────────────────────────
 
 async function fetchCapeFromMultpl(opts?: { startDate?: string }): Promise<Datum[]> {
+  console.log('[shiller/multpl] GET', MULTPL_URL);
   const res = await fetch(MULTPL_URL, {
     cache: 'no-store',
     headers: { 'User-Agent': 'Bellbird/1.0 (cycles dashboard)' },
   });
-  if (!res.ok) throw new Error(`multpl fetch returned ${res.status}`);
+  const ct = res.headers.get('content-type') ?? '?';
+  const server = res.headers.get('server') ?? '?';
+  console.log(`[shiller/multpl] HTTP ${res.status} ct=${ct} server=${server}`);
+  if (!res.ok) {
+    const bodyText = await res.text().catch(() => '');
+    throw new Error(`multpl HTTP ${res.status} ct=${ct} server=${server} body="${bodyText.slice(0, 300).replace(/\s+/g, ' ')}"`);
+  }
   const html = await res.text();
+  console.log(`[shiller/multpl] body length=${html.length}`);
 
   // Table rows look like: <td>Jan 1, 2024</td><td>34.12</td>
   // We pull all <tr>...</tr> blocks containing a recognisable date + numeric.
@@ -159,7 +193,12 @@ async function fetchCapeFromMultpl(opts?: { startDate?: string }): Promise<Datum
     out.push({ date, value });
   }
 
-  if (out.length === 0) throw new Error('multpl scrape produced zero observations');
+  if (out.length === 0) {
+    const sample = html.slice(0, 800).replace(/\s+/g, ' ');
+    throw new Error(
+      `multpl regex produced zero rows. ct=${ct} server=${server} len=${html.length} sample="${sample}"`,
+    );
+  }
   // multpl returns newest-first; we want oldest-first to match Yale + downstream
   return out.sort((a, b) => a.date.localeCompare(b.date));
 }
