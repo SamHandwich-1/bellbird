@@ -10,6 +10,13 @@ import type { CycleName, IndicatorCategory } from '@/lib/types';
 
 export type SeriesSource = 'fred' | 'shiller' | 'derived';
 
+// What the dashboard cell should render for this series:
+//   'level'   — show the raw value column (FedFunds, TCU, CAPE, VIX, …)
+//   'yoy_pct' — show the yoy_change column (CPI, PAYEMS, WALCL, real wage)
+// The DB still stores both columns either way; this only changes which one
+// the IndicatorCell renders. Default is 'level'.
+export type DisplayAs = 'level' | 'yoy_pct';
+
 export type SeriesDefinition = {
   id: string;                          // canonical id used as macro_indicators.series_id
   fredId?: string;                     // FRED series_id if source === 'fred'
@@ -19,6 +26,8 @@ export type SeriesDefinition = {
   frequency: 'daily' | 'weekly' | 'monthly' | 'quarterly';
   // Which gauges this series feeds into. May be empty if displayed only.
   contributesTo: CycleName[];
+  // What to render on the dashboard cell. Defaults to 'level'.
+  displayAs?: DisplayAs;
   // Optional tooltip extra (e.g. Buffett's "directional proxy" caveat).
   tooltip?: string;
 };
@@ -41,7 +50,8 @@ export const SERIES: readonly SeriesDefinition[] = [
     source: 'derived',
     frequency: 'monthly',
     contributesTo: [],
-    tooltip: 'AHETPI (production/nonsupervisory hourly earnings) deflated by CPILFESL.',
+    displayAs: 'yoy_pct',
+    tooltip: 'YoY % change of AHETPI (production/nonsupervisory hourly earnings) deflated by CPILFESL.',
   },
   {
     id: 'CPILFESL',
@@ -51,6 +61,7 @@ export const SERIES: readonly SeriesDefinition[] = [
     source: 'fred',
     frequency: 'monthly',
     contributesTo: [],
+    displayAs: 'yoy_pct',
     tooltip: 'YoY % change of the core CPI index.',
   },
   {
@@ -65,22 +76,23 @@ export const SERIES: readonly SeriesDefinition[] = [
   {
     id: 'PAYEMS',
     fredId: 'PAYEMS',
-    displayName: 'Nonfarm Payrolls',
+    displayName: 'Nonfarm Payrolls (YoY)',
     category: 'real_economy',
     source: 'fred',
     frequency: 'monthly',
     contributesTo: [],
-    tooltip: 'YoY % change derived for the dashboard.',
+    displayAs: 'yoy_pct',
+    tooltip: 'YoY % change of total nonfarm payrolls.',
   },
   {
-    id: 'NAPM',
-    fredId: 'NAPM',
-    displayName: 'ISM Manufacturing',
+    id: 'IPMAN',
+    fredId: 'IPMAN',
+    displayName: 'Industrial Production: Manufacturing',
     category: 'real_economy',
     source: 'fred',
     frequency: 'monthly',
     contributesTo: ['juglar'],
-    tooltip: 'Below 50 = contraction. Contributes to the Juglar gauge.',
+    tooltip: 'Index level (2017=100). YoY % feeds the Juglar gauge — replacing NAPM after FRED dropped ISM data licensing.',
   },
 
   // ─── Rates & liquidity ───────────────────────────────────────────────────
@@ -115,12 +127,13 @@ export const SERIES: readonly SeriesDefinition[] = [
   {
     id: 'WALCL',
     fredId: 'WALCL',
-    displayName: 'Fed Balance Sheet',
+    displayName: 'Fed Balance Sheet (YoY)',
     category: 'liquidity',
     source: 'fred',
     frequency: 'weekly',
     contributesTo: [],
-    tooltip: 'YoY % change derived for the dashboard.',
+    displayAs: 'yoy_pct',
+    tooltip: 'YoY % change of the Fed balance sheet total assets.',
   },
   {
     id: 'DTWEXBGS',
@@ -174,7 +187,7 @@ export const SERIES: readonly SeriesDefinition[] = [
     frequency: 'daily',
     contributesTo: ['market'],
     tooltip:
-      'Directional proxy — not the textbook market-cap-to-GDP level. Derived from WILL5000PRFC ÷ GDP.',
+      'Directional proxy — not the textbook market-cap-to-GDP level. Derived from SP500 ÷ GDP. History begins 2010 due to SP500 series availability on FRED.',
   },
   {
     id: 'VIXCLS',

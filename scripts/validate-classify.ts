@@ -122,44 +122,44 @@ const marketCases: MarketCase[] = [
 
 const juglarCases: JuglarCase[] = [
   {
-    name: 'TCU and ISM both around long-run mean → healthy / Expanding',
-    input: { tcu_z: 0.1, ism_z: 0.2, ism_value: 51, tcu_value: 78 },
+    name: 'TCU and IPMAN both around long-run mean → healthy / Expanding',
+    input: { tcu_z: 0.1, ipman_z: 0.2, ipman_yoy: 2.0, tcu_value: 78 },
     expect: { status: 'healthy', reading: 'Expanding' },
   },
   {
-    name: 'TCU at 73 (sub-75) → caution even with positive z',
-    input: { tcu_z: 0.3, ism_z: 0.4, ism_value: 51, tcu_value: 73 },
-    expect: { status: 'caution', reading: 'Expanding' },
+    name: 'Score=+0.8 with healthy IPMAN YoY → healthy / Stretched (overheating side, score below 1.5)',
+    input: { tcu_z: 0.8, ipman_z: 0.8, ipman_yoy: 3.0, tcu_value: 82 },
+    expect: { status: 'healthy', reading: 'Stretched' },
   },
   {
-    name: 'ISM at 48 (sub-50) with healthy z → caution / Contracting',
-    input: { tcu_z: -0.2, ism_z: -0.3, ism_value: 48, tcu_value: 77 },
-    expect: { status: 'caution', reading: 'Contracting' },
-  },
-  {
-    name: 'ISM at 43 → alert via ISM-only gate / Contracting',
-    input: { tcu_z: 0.0, ism_z: -1.2, ism_value: 43, tcu_value: 76 },
-    expect: { status: 'alert', reading: 'Contracting' },
-  },
-  {
-    name: 'Composite z=+1.6 with high ISM → alert / Peaking',
-    input: { tcu_z: 1.5, ism_z: 1.8, ism_value: 58, tcu_value: 84 },
-    expect: { status: 'alert', reading: 'Peaking' },
-  },
-  {
-    name: 'Composite z=+0.8 with ISM>50 → caution / Stretched',
-    input: { tcu_z: 0.8, ism_z: 0.8, ism_value: 54, tcu_value: 81 },
-    expect: { status: 'caution', reading: 'Stretched' },
-  },
-  {
-    name: 'Composite z=-0.8 with ISM>50 → caution / Rolling',
-    input: { tcu_z: -0.8, ism_z: -0.8, ism_value: 51, tcu_value: 74 },
+    name: 'IPMAN YoY -1% (mild slowing), score mild negative → caution / Rolling',
+    input: { tcu_z: -0.6, ipman_z: -0.4, ipman_yoy: -1.0, tcu_value: 74 },
     expect: { status: 'caution', reading: 'Rolling' },
   },
   {
-    name: 'Composite z=-1.3 → caution+ / Contracting (ISM 51 saves status)',
-    input: { tcu_z: -1.3, ism_z: -1.3, ism_value: 51, tcu_value: 73 },
+    name: 'IPMAN YoY -3% (deep contraction) → alert / Contracting',
+    input: { tcu_z: -0.8, ipman_z: -1.5, ipman_yoy: -3.0, tcu_value: 72 },
+    expect: { status: 'alert', reading: 'Contracting' },
+  },
+  {
+    name: 'Score=+1.65 with high IPMAN +4.5% → caution / Peaking (overheating peaks at caution)',
+    input: { tcu_z: 1.5, ipman_z: 1.8, ipman_yoy: 4.5, tcu_value: 84 },
+    expect: { status: 'caution', reading: 'Peaking' },
+  },
+  {
+    name: 'Score=-0.7 with positive IPMAN +1% → healthy / Rolling (slowing within thresholds)',
+    input: { tcu_z: -0.8, ipman_z: -0.6, ipman_yoy: 1.0, tcu_value: 74 },
+    expect: { status: 'healthy', reading: 'Rolling' },
+  },
+  {
+    name: 'Score=-1.3 with IPMAN -1% → caution / Contracting (score<-1 short-circuits)',
+    input: { tcu_z: -1.3, ipman_z: -1.3, ipman_yoy: -1.0, tcu_value: 72 },
     expect: { status: 'caution', reading: 'Contracting' },
+  },
+  {
+    name: 'IPMAN YoY -2.5% with mid score → alert / Contracting',
+    input: { tcu_z: 0.0, ipman_z: -1.0, ipman_yoy: -2.5, tcu_value: 78 },
+    expect: { status: 'alert', reading: 'Contracting' },
   },
 ];
 

@@ -134,12 +134,12 @@ async function buildDerivedSeries(
   startDate: string,
 ): Promise<Datum[]> {
   if (def.id === 'BUFFETT_INDICATOR') {
-    const [wilshire, gdp] = await Promise.all([
-      fetchObservations('WILL5000PRFC', { startDate }),
+    const [equity, gdp] = await Promise.all([
+      fetchObservations('SP500', { startDate }),
       fetchObservations('GDP', { startDate: '1990-01-01' }),
     ]);
     return computeBuffett(
-      wilshire.map((r) => ({ date: r.date, value: r.value })),
+      equity.map((r) => ({ date: r.date, value: r.value })),
       gdp.map((r) => ({ date: r.date, value: r.value })),
     );
   }
@@ -245,25 +245,34 @@ async function buildCycleReadings(supabase: SupabaseClient): Promise<number> {
   cutoff.setDate(cutoff.getDate() - 200);
   const cutoffStr = cutoff.toISOString().slice(0, 10);
 
-  const neededSeries = ['BAMLH0A0HYM2', 'T10Y2Y', 'CAPE', 'BUFFETT_INDICATOR', 'VIXCLS', 'TCU', 'NAPM'];
+  const neededSeries = ['BAMLH0A0HYM2', 'T10Y2Y', 'CAPE', 'BUFFETT_INDICATOR', 'VIXCLS', 'TCU', 'IPMAN'];
 
   const { data: rows, error } = await supabase
     .from('macro_indicators')
-    .select('series_id, observation_date, value, z_score_30y')
+    .select('series_id, observation_date, value, yoy_change, z_score_30y')
     .in('series_id', neededSeries)
     .gte('observation_date', cutoffStr)
     .order('observation_date', { ascending: true });
   if (error) throw error;
 
-  const bySeriesId = new Map<string, Array<{ date: string; value: number | null; z: number | null }>>();
+  const bySeriesId = new Map<
+    string,
+    Array<{ date: string; value: number | null; yoy: number | null; z: number | null }>
+  >();
   for (const row of (rows ?? []) as Array<{
     series_id: string;
     observation_date: string;
     value: number | null;
+    yoy_change: number | null;
     z_score_30y: number | null;
   }>) {
     const arr = bySeriesId.get(row.series_id) ?? [];
-    arr.push({ date: row.observation_date, value: row.value, z: row.z_score_30y });
+    arr.push({
+      date: row.observation_date,
+      value: row.value,
+      yoy: row.yoy_change,
+      z: row.z_score_30y,
+    });
     bySeriesId.set(row.series_id, arr);
   }
 
@@ -302,12 +311,19 @@ async function buildCycleReadings(supabase: SupabaseClient): Promise<number> {
     buffett_z: latestZ('BUFFETT_INDICATOR'),
     vix_z: latestZ('VIXCLS'),
   });
-  const ism_value = latestValue('NAPM') ?? 50;
+  const latestYoy = (id: string): number => {
+    const arr = bySeriesId.get(id) ?? [];
+    for (let i = arr.length - 1; i >= 0; i--) {
+      if (arr[i].yoy !== null) return arr[i].yoy!;
+    }
+    return 0;
+  };
   const tcu_value = latestValue('TCU') ?? 78;
+  const ipman_yoy = latestYoy('IPMAN');
   const juglar = classifyJuglar({
     tcu_z: latestZ('TCU'),
-    ism_z: latestZ('NAPM'),
-    ism_value,
+    ipman_z: latestZ('IPMAN'),
+    ipman_yoy,
     tcu_value,
   });
 

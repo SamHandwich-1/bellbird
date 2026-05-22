@@ -26,9 +26,9 @@ export type MarketInput = {
 
 export type JuglarInput = {
   tcu_z: number;
-  ism_z: number;
-  ism_value: number;                       // latest ISM reading (e.g. 48.5)
-  tcu_value: number;                       // latest TCU reading (e.g. 78.2)
+  ipman_z: number;
+  ipman_yoy: number;                       // latest IPMAN YoY % (e.g. +2.1)
+  tcu_value: number;                       // latest TCU reading (e.g. 76.1)
 };
 
 export type ClassifierResult = {
@@ -117,35 +117,41 @@ export function classifyMarket(input: MarketInput): ClassifierResult {
 // ─── Juglar ────────────────────────────────────────────────────────────────
 
 export function classifyJuglar(input: JuglarInput): ClassifierResult {
-  const { tcu_z, ism_z, ism_value, tcu_value } = input;
-  const juglar_score = 0.5 * tcu_z + 0.5 * ism_z;
+  const { tcu_z, ipman_z, ipman_yoy, tcu_value } = input;
+  const juglar_score = 0.5 * tcu_z + 0.5 * ipman_z;
 
+  // Status: contraction is the alert signal; overheating peaks at caution
+  // (per the rule rewrite — IPMAN's diffusion-index pivot doesn't exist, so
+  // the upside is bounded by capacity not by a 50-line). Deep YoY contraction
+  // is the unambiguous bad case.
   let status: CycleStatus;
-  if (juglar_score > 1.5 || ism_value < 45) {
+  if (ipman_yoy < -2) {
     status = 'alert';
-  } else if (Math.abs(juglar_score) > 0.5 || ism_value < 50 || tcu_value < 75) {
+  } else if (ipman_yoy < 0 || juglar_score > 1.5) {
     status = 'caution';
   } else {
     status = 'healthy';
   }
 
-  // Ism<50 OR very-negative score short-circuits to Contracting before any
-  // other label fires. Otherwise check from highest to lowest score band.
+  // Reading bands — IPMAN YoY check goes first so a mild contraction reads as
+  // "Rolling" rather than landing in the score-only Expanding band.
   const reading =
-    ism_value < 50 || juglar_score < -1.0 ? 'Contracting'
+    ipman_yoy < -2 || juglar_score < -1.0 ? 'Contracting'
+    : ipman_yoy < 0 ? 'Rolling'
     : juglar_score > 1.0 ? 'Peaking'
     : juglar_score > 0.5 ? 'Stretched'
-    : juglar_score >= -0.5 ? 'Expanding'
-    : 'Rolling';
+    : juglar_score < -0.5 ? 'Rolling'
+    : 'Expanding';
 
+  const yoySign = ipman_yoy >= 0 ? '+' : '';
   const detail =
-    `TCU ${tcu_value.toFixed(1)} (z ${formatZ(tcu_z)}), ISM ${ism_value.toFixed(1)} (z ${formatZ(ism_z)}). Score ${formatZ(juglar_score)}.`;
+    `TCU ${tcu_value.toFixed(1)} (z ${formatZ(tcu_z)}), IPMAN YoY ${yoySign}${ipman_yoy.toFixed(2)}% (z ${formatZ(ipman_z)}). Score ${formatZ(juglar_score)}.`;
 
   return {
     status,
     reading,
     detail,
-    contributing_series: { tcu_z, ism_z, ism_value, tcu_value, juglar_score },
+    contributing_series: { tcu_z, ipman_z, ipman_yoy, tcu_value, juglar_score },
   };
 }
 

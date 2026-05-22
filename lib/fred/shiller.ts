@@ -53,8 +53,12 @@ async function fetchCapeFromYale(opts?: { startDate?: string }): Promise<Datum[]
     raw: true,
   }) as unknown as unknown[][];
 
-  // Header row: we look for a header cell labelled "CAPE" or "P/E10" — older
-  // vintages used the latter. Row index of the header varies (5 or 6).
+  // Header detection — the Data sheet has multi-row labels split across rows
+  // ~4-7. We want the row where the simple "Date" column 0 label appears AND
+  // a cell contains "p/e10" (which uniquely identifies the "P/E10 or CAPE"
+  // column in that same row). Earlier vintages also had standalone "CAPE"
+  // appear in row 6 col 16 as the bottom of the "Excess CAPE Yield" split
+  // label — substring matching on "p/e10" avoids that collision.
   let headerRowIdx = -1;
   let dateColIdx = -1;
   let capeColIdx = -1;
@@ -62,17 +66,16 @@ async function fetchCapeFromYale(opts?: { startDate?: string }): Promise<Datum[]
     const row = rows[i];
     if (!Array.isArray(row)) continue;
     const cells = row.map((c) => String(c ?? '').trim().toLowerCase());
-    const dateCol = cells.findIndex((c) => c === 'date');
-    const capeCol = cells.findIndex((c) => c === 'cape' || c === 'p/e10');
-    if (dateCol >= 0 && capeCol >= 0) {
-      headerRowIdx = i;
-      dateColIdx = dateCol;
-      capeColIdx = capeCol;
-      break;
-    }
+    if (cells[0] !== 'date') continue;
+    const capeCol = cells.findIndex((c) => c.includes('p/e10'));
+    if (capeCol < 0) continue;
+    headerRowIdx = i;
+    dateColIdx = 0;
+    capeColIdx = capeCol;
+    break;
   }
   if (headerRowIdx < 0) {
-    throw new Error('Yale XLS: could not locate header row with Date + CAPE columns');
+    throw new Error('Yale XLS: could not locate header row with Date + P/E10 columns');
   }
 
   const startDate = opts?.startDate ?? '1900-01-01';

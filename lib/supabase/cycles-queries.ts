@@ -29,24 +29,29 @@ export type IndicatorSnapshot = {
 // snapshot includes monthly history for the sparkline. Series with no rows
 // yet (cron hasn't backfilled, FRED key missing, etc.) come back with empty
 // history and null latest values so the UI still renders the cell.
+//
+// One query per series in parallel — a single cross-series `.select('*')`
+// hit the PostgREST 1000-row cap and returned only the oldest ~1995 rows
+// across all series. Per-series `.limit(10000)` keeps each query well under
+// the cap (largest daily series is ~8.2k rows over 30y) and gives every
+// series its real latest observation.
 export async function getIndicatorSnapshots(): Promise<IndicatorSnapshot[]> {
   const supabase = await createClient();
-  const { data, error } = await supabase
-    .from('macro_indicators')
-    .select('*')
-    .order('observation_date', { ascending: true });
-  if (error) throw error;
 
-  // Group by series_id, resample daily/weekly to monthly for the sparkline.
-  const byId = new Map<string, MacroIndicator[]>();
-  for (const row of (data ?? []) as MacroIndicator[]) {
-    const arr = byId.get(row.series_id) ?? [];
-    arr.push(row);
-    byId.set(row.series_id, arr);
-  }
+  const results = await Promise.all(
+    SERIES.map(async (s) => {
+      const { data, error } = await supabase
+        .from('macro_indicators')
+        .select('*')
+        .eq('series_id', s.id)
+        .order('observation_date', { ascending: true })
+        .limit(10000);
+      if (error) throw error;
+      return { series: s, rows: (data ?? []) as MacroIndicator[] };
+    }),
+  );
 
-  return SERIES.map((s) => {
-    const rows = byId.get(s.id) ?? [];
+  return results.map(({ series: s, rows }) => {
     const monthly = resampleToMonthly(rows);
     const latest = rows[rows.length - 1];
     return {
