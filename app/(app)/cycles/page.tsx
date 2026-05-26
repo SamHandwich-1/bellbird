@@ -1,27 +1,11 @@
-import { CyclesScreen } from '@/components/cycles/CyclesScreen';
-import {
-  getIndicatorSnapshots,
-  getMergedCycleReadings,
-  getBookDistribution,
-  getLastRefreshTime,
-} from '@/lib/supabase/cycles-queries';
+import { StubScreen } from '@/components/shared/StubScreen';
 
-export const dynamic = 'force-dynamic';
-
-export default async function Page() {
-  const [readings, snapshots, distribution, lastRefreshed] = await Promise.all([
-    getMergedCycleReadings(),
-    getIndicatorSnapshots(),
-    getBookDistribution(),
-    getLastRefreshTime(),
-  ]);
-
+export default function CyclesPage() {
   return (
-    <CyclesScreen
-      readings={readings}
-      snapshots={snapshots}
-      distribution={distribution}
-      lastRefreshed={lastRefreshed}
+    <StubScreen
+      mode="Cycles"
+      turn="C"
+      note="Multi-gauge Now dashboard + percentile-history sub-tab with drawdown view — rebuilding in Turn C against the v2 mockup."
     />
   );
 }

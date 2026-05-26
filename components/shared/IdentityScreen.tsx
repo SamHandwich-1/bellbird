@@ -1,248 +1,398 @@
 import Link from 'next/link';
-import { ArrowUpRight } from 'lucide-react';
 import { tokens } from '@/lib/tokens';
+import { createClient } from '@/lib/supabase/server';
+import { Section } from '@/components/shared/Section';
 
-export function IdentityScreen() {
-  return (
-    <div className="pt-16 sm:pt-24">
-      {/* Hero */}
-      <div className="mb-24">
-        <div
-          className="font-sans text-[10px] tracking-[0.22em] uppercase mb-6"
-          style={{ color: tokens.whisper }}
-        >
-          A clear note in the noise
-        </div>
-        <h1
-          className="font-serif text-[88px] sm:text-[120px] leading-[0.95] tracking-tight"
-          style={{ fontWeight: 320 }}
-        >
-          Bellbird
-        </h1>
-        <div className="mt-8 max-w-[58ch]">
-          <p
-            className="font-serif text-[22px] leading-[1.45]"
-            style={{ fontWeight: 340, color: tokens.ash }}
-          >
-            Named for the bell-like call that cuts through the bush. A workspace
-            for developing investment theses with deliberation — research, stress-test,
-            watch, attribute. Upstream of Wedgetail&rsquo;s monitoring, upstream of
-            Bowerbird&rsquo;s decisions. Where ideas are born and refined before they
-            enter the system.
-          </p>
-        </div>
+const LAST_EDITED = '25 MAY 2026';
 
-        <div className="mt-12 flex items-center gap-8 flex-wrap">
-          <Link
-            href="/library"
-            className="font-sans text-[11px] tracking-[0.22em] uppercase btn-quiet flex items-center gap-2"
-            style={{
-              color: tokens.ink,
-              borderBottom: `1px solid ${tokens.ink}`,
-              paddingBottom: 4,
-            }}
-          >
-            Enter library <ArrowUpRight size={12} strokeWidth={1.5} />
-          </Link>
-          <Link
-            href="/develop"
-            className="font-sans text-[11px] tracking-[0.22em] uppercase btn-quiet"
-            style={{ color: tokens.whisper }}
-          >
-            Begin a conversation
-          </Link>
-        </div>
-      </div>
+const LENSES = [
+  { name: 'Marks',      role: 'Second-level thinking · asymmetry over directional bets' },
+  { name: 'Mauboussin', role: "Expectations gap · what's priced vs what's likely" },
+  { name: 'Munger',     role: 'Inversion · what would kill this?' },
+  { name: 'Klarman',    role: 'Permanent loss as the only real risk' },
+  { name: 'Buffett',    role: 'Circle of competence · four-sentence thesis test' },
+];
 
-      <div className="hairline mb-16" />
+const ENGAGED = [
+  'Industrial commodities (Cu, Ag, U)',
+  'AI infrastructure equities',
+  'Credit cycle dynamics',
+  'Japan financials',
+  'Macro / cycles',
+  'Solana ecosystem',
+];
 
-      {/* The three birds */}
-      <section className="mb-24">
-        <div
-          className="font-sans text-[10px] tracking-[0.22em] uppercase mb-8"
-          style={{ color: tokens.whisper }}
-        >
-          The three birds
-        </div>
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-10">
-          <BirdCard
-            name="Bellbird"
-            role="Ideation"
-            body="Develops and refines theses with structured deliberation. Curates the watchlist. Stress-tests against contrarian models. Surfaces cross-thesis patterns."
-            current
-          />
-          <BirdCard
-            name="Wedgetail"
-            role="Surveillance"
-            body="Watches markets ambient and continuously. Surfaces triggers. Tracks calendar events, earnings, economic data. Reports back to Bellbird when something Bellbird is watching for arrives."
-          />
-          <BirdCard
-            name="Bowerbird"
-            role="Decision infrastructure"
-            body="The long-arc platform. Ingests theses from Bellbird, signals from Wedgetail. Runs decision engine, memory, fragility monitor, pair-trade discovery."
-          />
-        </div>
-      </section>
+const AVOIDED = [
+  'Biotech (binary outcomes)',
+  'Crypto altcoins (no edge)',
+  'Single-stock options',
+  'China A-shares',
+  'Emerging-market sovereign debt',
+];
 
-      <div className="hairline mb-16" />
+const BIASES = [
+  {
+    bias: 'Strong negative prior on Meta',
+    counter: 'Counterweight with rigorous valuation work; quote source figures, not impressions',
+  },
+  {
+    bias: 'Education-sector bias from prior career',
+    counter: 'Let data lead. Apply equal scepticism to thesis and anti-thesis',
+  },
+  {
+    bias: 'Recency bias on AI capex narrative',
+    counter: 'Discipline via historical analogs — every AI thesis tested against the 1999 tech-capex analog',
+  },
+];
 
-      {/* Palette */}
-      <section className="mb-24">
-        <div
-          className="font-sans text-[10px] tracking-[0.22em] uppercase mb-8"
-          style={{ color: tokens.whisper }}
-        >
-          Palette
-        </div>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-          <Swatch color={tokens.paper} name="Paper" note="Surface" />
-          <Swatch color={tokens.mist} name="Mist" note="Card fill" />
-          <Swatch color={tokens.ink} name="Ink" note="Primary text" />
-          <Swatch color={tokens.chime} name="Chime" note="The bell note" />
-          <Swatch color={tokens.sage} name="Sage" note="Secular / high conviction" />
-          <Swatch color={tokens.amber} name="Amber" note="Mid-cycle / medium" />
-          <Swatch color={tokens.terracotta} name="Terracotta" note="Credit-cycle / low" />
-          <Swatch color={tokens.steel} name="Steel" note="Long-cycle" />
-        </div>
-      </section>
+type ServiceStatusType = 'connected' | 'planned';
 
-      <div className="hairline mb-16" />
+const SERVICES: { name: string; sub: string; status: ServiceStatusType }[] = [
+  { name: 'Massive',              sub: 'Markets · ex-Polygon',          status: 'connected' },
+  { name: 'FRED',                 sub: 'Macro · St. Louis Fed',         status: 'connected' },
+  { name: 'OpenAI Whisper',       sub: 'Voice input · Develop chat',    status: 'planned' },
+  { name: 'NBER recession dates', sub: 'Cycles · History',              status: 'connected' },
+  { name: 'Wedgetail',            sub: 'Portfolio state · planned integration', status: 'planned' },
+];
 
-      {/* Typography */}
-      <section className="mb-24">
-        <div
-          className="font-sans text-[10px] tracking-[0.22em] uppercase mb-8"
-          style={{ color: tokens.whisper }}
-        >
-          Typography
-        </div>
-        <div className="space-y-8">
-          <div>
-            <div
-              className="font-sans text-[10px] tracking-[0.16em] uppercase mb-2"
-              style={{ color: tokens.whisper }}
-            >
-              Display — Fraunces
-            </div>
-            <div
-              className="font-serif text-[56px] leading-[1.05] tracking-tight"
-              style={{ fontWeight: 320 }}
-            >
-              The note before the score.
-            </div>
-          </div>
-          <div>
-            <div
-              className="font-sans text-[10px] tracking-[0.16em] uppercase mb-2"
-              style={{ color: tokens.whisper }}
-            >
-              Body — Manrope
-            </div>
-            <p className="font-sans text-[15px] leading-[1.7] max-w-[58ch]">
-              Each thesis carries an unpriced second-order effect, a cycle classification,
-              a watch list of triggers, and a thread of conversation that developed it.
-              The library is the artefact of disciplined thinking — not a dashboard, not
-              a feed. A collection of considered ideas, arranged.
-            </p>
-          </div>
-          <div>
-            <div
-              className="font-sans text-[10px] tracking-[0.16em] uppercase mb-2"
-              style={{ color: tokens.whisper }}
-            >
-              Numbers — JetBrains Mono
-            </div>
-            <div className="font-mono nums text-[20px]">
-              +25.4%   80%   $12,840.50   2026-06-08
-            </div>
-          </div>
-        </div>
-      </section>
-    </div>
-  );
-}
+const SETTINGS = [
+  { label: 'Voice input',                 value: 'Toggle · tap to start / tap to stop' },
+  { label: 'Default sub-tab on Cycles',   value: 'Now' },
+  { label: 'Develop autosave',            value: 'On · every message' },
+  { label: 'Trigger notifications',       value: 'Off · deferred to Wedgetail' },
+];
 
-function BirdCard({
-  name,
-  role,
-  body,
-  current,
-}: {
-  name: string;
-  role: string;
-  body: string;
-  current?: boolean;
-}) {
-  return (
-    <div
-      className="p-6"
-      style={{
-        background: current ? tokens.mist : 'transparent',
-        border: current ? 'none' : `1px solid ${tokens.hairline}`,
-      }}
-    >
-      <div className="flex items-center gap-2 mb-3">
-        <div
-          style={{
-            width: 6,
-            height: 6,
-            borderRadius: '50%',
-            background: current ? tokens.chime : tokens.whisper,
-          }}
-        />
-        <div
-          className="font-sans text-[10px] tracking-[0.22em] uppercase"
-          style={{ color: tokens.whisper }}
-        >
-          {role}
-        </div>
-      </div>
-      <div
-        className="font-serif text-[26px] tracking-tight mb-3"
-        style={{ fontWeight: 380 }}
-      >
-        {name}
-      </div>
-      <p
-        className="font-sans text-[13px] leading-[1.65]"
-        style={{ color: tokens.ash }}
-      >
-        {body}
-      </p>
-      {current && (
-        <div
-          className="mt-4 font-sans text-[10px] tracking-[0.22em] uppercase"
-          style={{ color: tokens.chime }}
-        >
-          You are here
-        </div>
-      )}
-    </div>
-  );
-}
+export async function IdentityScreen() {
+  const supabase = await createClient();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
 
-function Swatch({ color, name, note }: { color: string; name: string; note: string }) {
   return (
     <div>
+      {/* Page header */}
+      <div style={{ marginBottom: 36 }}>
+        <div className="label" style={{ color: tokens.muted, marginBottom: 6 }}>
+          Investor profile
+        </div>
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
+        >
+          <h1
+            className="serif"
+            style={{
+              fontSize: 36,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              color: tokens.text,
+              margin: 0,
+              lineHeight: 1.1,
+            }}
+          >
+            Identity
+          </h1>
+          <div
+            className="mono nums"
+            style={{ fontSize: 10.5, color: tokens.faint, letterSpacing: '0.08em' }}
+          >
+            LAST EDITED · {LAST_EDITED}
+          </div>
+        </div>
+      </div>
+
+      <Section label="The investor">
+        <p
+          className="serif"
+          style={{
+            fontSize: 16,
+            lineHeight: 1.65,
+            color: tokens.body,
+            margin: 0,
+            maxWidth: '62ch',
+          }}
+        >
+          Melbourne-based investor focused on non-consensus, second-order trades. Bellbird is the
+          workspace for theses that require expectations-gap discipline and downside-first survival
+          testing. Targets unpriced second-order effects rather than directional macro calls.
+          Wedgetail handles live portfolio state, trigger automation, and draft execution.
+        </p>
+      </Section>
+
+      <Section label="The lens" right="Behavioural frameworks">
+        {LENSES.map((l) => (
+          <PrincipleRow key={l.name} name={l.name} role={l.role} />
+        ))}
+        <p
+          className="serif"
+          style={{
+            fontSize: 13,
+            fontStyle: 'italic',
+            color: tokens.faint,
+            margin: '14px 0 0',
+            maxWidth: '60ch',
+          }}
+        >
+          These lenses are encoded behaviourally in the Develop pipeline — one primary lens per
+          phase, never stacked. Frameworks shape questions; they don&rsquo;t get named in prompts.
+        </p>
+      </Section>
+
+      <Section label="Circle of competence">
+        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 32 }}>
+          <div>
+            <div className="label" style={{ color: tokens.sage, marginBottom: 12 }}>
+              Engaged
+            </div>
+            {ENGAGED.map((t) => (
+              <CompetenceItem key={t} text={t} />
+            ))}
+          </div>
+          <div>
+            <div className="label" style={{ color: tokens.terracotta, marginBottom: 12 }}>
+              Avoided
+            </div>
+            {AVOIDED.map((t) => (
+              <CompetenceItem key={t} text={t} muted />
+            ))}
+          </div>
+        </div>
+      </Section>
+
+      <Section label="Biases to counterbalance" right="Self-declared">
+        {BIASES.map((b) => (
+          <BiasRow key={b.bias} bias={b.bias} counter={b.counter} />
+        ))}
+      </Section>
+
+      <Section label="Data connections" right="Status · live">
+        {SERVICES.map((s) => (
+          <ServiceStatus key={s.name} name={s.name} sub={s.sub} status={s.status} />
+        ))}
+      </Section>
+
+      <Section label="Settings" dense>
+        {SETTINGS.map((s) => (
+          <SettingRow key={s.label} label={s.label} value={s.value} />
+        ))}
+        <AuthRow userEmail={user?.email ?? null} />
+      </Section>
+    </div>
+  );
+}
+
+function PrincipleRow({ name, role }: { name: string; role: string }) {
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '120px 1fr',
+        gap: 24,
+        padding: '14px 0',
+        borderBottom: `1px solid ${tokens.line}`,
+        alignItems: 'baseline',
+      }}
+    >
       <div
+        className="serif"
         style={{
-          background: color,
-          height: 80,
-          border: `1px solid ${tokens.hairline}`,
+          fontSize: 17,
+          fontWeight: 600,
+          color: tokens.text,
+          letterSpacing: '-0.01em',
         }}
-      />
-      <div className="mt-2 font-sans text-[11px]" style={{ color: tokens.ink }}>
+      >
         {name}
       </div>
-      <div className="font-mono text-[10px]" style={{ color: tokens.whisper }}>
-        {color}
+      <div className="serif" style={{ fontSize: 14, color: tokens.body, lineHeight: 1.5 }}>
+        {role}
+      </div>
+    </div>
+  );
+}
+
+function CompetenceItem({ text, muted = false }: { text: string; muted?: boolean }) {
+  return (
+    <div style={{ padding: '8px 0', borderBottom: `1px solid ${tokens.line}` }}>
+      <span
+        className="serif"
+        style={{
+          fontSize: 14,
+          color: muted ? tokens.muted : tokens.body,
+          lineHeight: 1.5,
+        }}
+      >
+        {text}
+      </span>
+    </div>
+  );
+}
+
+function BiasRow({ bias, counter }: { bias: string; counter: string }) {
+  return (
+    <div style={{ padding: '16px 0', borderBottom: `1px solid ${tokens.line}` }}>
+      <div className="serif" style={{ fontSize: 14.5, color: tokens.body, marginBottom: 6 }}>
+        {bias}
       </div>
       <div
-        className="font-sans text-[10px] mt-0.5"
-        style={{ color: tokens.whisper }}
+        className="serif"
+        style={{
+          fontSize: 13,
+          fontStyle: 'italic',
+          color: tokens.muted,
+          maxWidth: '62ch',
+          lineHeight: 1.55,
+        }}
       >
-        {note}
+        <span className="label" style={{ color: tokens.chime, marginRight: 8 }}>
+          Counter
+        </span>
+        {counter}
       </div>
+    </div>
+  );
+}
+
+function ServiceStatus({
+  name,
+  sub,
+  status,
+}: {
+  name: string;
+  sub: string;
+  status: ServiceStatusType;
+}) {
+  const statusColor = status === 'connected' ? tokens.sage : tokens.faint;
+  return (
+    <div
+      style={{
+        display: 'grid',
+        gridTemplateColumns: '1fr auto auto',
+        gap: 24,
+        padding: '14px 0',
+        borderBottom: `1px solid ${tokens.line}`,
+        alignItems: 'baseline',
+      }}
+    >
+      <div>
+        <div
+          className="serif"
+          style={{ fontSize: 15, color: tokens.text, fontWeight: 500 }}
+        >
+          {name}
+        </div>
+        <div
+          className="mono"
+          style={{
+            fontSize: 10.5,
+            color: tokens.faint,
+            marginTop: 3,
+            letterSpacing: '0.03em',
+          }}
+        >
+          {sub}
+        </div>
+      </div>
+      <div
+        style={{
+          width: 7,
+          height: 7,
+          borderRadius: '50%',
+          background: statusColor,
+          boxShadow: status === 'connected' ? `0 0 6px ${statusColor}99` : 'none',
+          alignSelf: 'center',
+        }}
+      />
+      <span className="label" style={{ color: statusColor }}>
+        {status}
+      </span>
+    </div>
+  );
+}
+
+function SettingRow({ label, value }: { label: string; value: string }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        padding: '12px 0',
+        borderBottom: `1px solid ${tokens.line}`,
+      }}
+    >
+      <span className="serif" style={{ fontSize: 14, color: tokens.body }}>
+        {label}
+      </span>
+      <span
+        className="mono"
+        style={{ fontSize: 11.5, color: tokens.muted, letterSpacing: '0.03em' }}
+      >
+        {value}
+      </span>
+    </div>
+  );
+}
+
+function AuthRow({ userEmail }: { userEmail: string | null }) {
+  return (
+    <div
+      style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'baseline',
+        padding: '12px 0',
+        borderBottom: `1px solid ${tokens.line}`,
+      }}
+    >
+      <div>
+        <div className="serif" style={{ fontSize: 14, color: tokens.body }}>
+          Session
+        </div>
+        {userEmail && (
+          <div
+            className="mono"
+            style={{
+              fontSize: 10.5,
+              color: tokens.faint,
+              marginTop: 3,
+              letterSpacing: '0.03em',
+            }}
+          >
+            {userEmail}
+          </div>
+        )}
+      </div>
+      {userEmail ? (
+        <form action="/auth/sign-out" method="post">
+          <button
+            type="submit"
+            className="label btn-quiet"
+            style={{
+              background: 'transparent',
+              border: 'none',
+              color: tokens.chime,
+              cursor: 'pointer',
+              padding: 0,
+            }}
+          >
+            Sign out
+          </button>
+        </form>
+      ) : (
+        <Link
+          href="/login"
+          className="label btn-quiet"
+          style={{ color: tokens.chime, textDecoration: 'none' }}
+        >
+          Sign in
+        </Link>
+      )}
     </div>
   );
 }

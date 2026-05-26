@@ -475,6 +475,14 @@ Each turn ends with something deployable and testable.
 
 ## 6. Deferred to post-v1
 
+> **Active backlog lives in `TESTING_LOG.md` from 25 May 2026 onwards.**
+> PLAN.md remains the architecture-of-record (data model, build sequence, conventions);
+> TESTING_LOG.md is the working surface for bugs, feature requests, and design decisions
+> captured during testing. The two must stay synchronised — when a TESTING_LOG item
+> changes a build-sequence decision or schema, mirror it here. See `TESTING_LOG.md` →
+> "Recommended build sequence" for current priorities (v2 rebuild Turns A/B/C, then
+> the prompt overhaul).
+
 These were discussed but explicitly excluded from v1 to keep scope tight:
 
 - **Watch mode** — triggers, calendar, notifications. v1.1 priority.
@@ -511,6 +519,11 @@ When in doubt about design, defer to the mockup. When in doubt about voice, defe
 ---
 
 ## 9. Post-v1 backlog
+
+> **`TESTING_LOG.md` is the live working backlog from 25 May 2026 onwards.**
+> The items below were the initial post-v1 capture; they have since been re-categorised
+> and re-prioritised against the v2 rebuild in `TESTING_LOG.md`. Treat this section as
+> historical reference; do not edit items here without mirroring in TESTING_LOG.md.
 
 Logged after v1 shipped (2026-05-22). Items are surfaced and grouped, not prioritised against each other beyond the per-group notes. Live with the dashboard for a stretch before deciding sequencing.
 

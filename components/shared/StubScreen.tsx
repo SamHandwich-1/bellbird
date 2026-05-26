@@ -1,47 +1,64 @@
 import { tokens } from '@/lib/tokens';
 
-export function StubScreen({
-  mode,
-  title,
-  turn,
-  description,
-}: {
+type StubScreenProps = {
   mode: string;
-  title: string;
-  turn: number;
-  description: string;
-}) {
+  turn: string;
+  note?: string;
+};
+
+export function StubScreen({ mode, turn, note }: StubScreenProps) {
   return (
-    <div className="pt-12">
-      <div className="mb-12">
-        <div
-          className="font-sans text-[10px] tracking-[0.22em] uppercase mb-2"
-          style={{ color: tokens.whisper }}
-        >
-          {mode}
+    <div>
+      <div style={{ marginBottom: 28 }}>
+        <div className="label" style={{ color: tokens.muted, marginBottom: 6 }}>
+          Mode placeholder
         </div>
-        <h1
-          className="font-serif text-[44px] tracking-tight"
-          style={{ fontWeight: 340 }}
-        >
-          {title}
-        </h1>
         <div
-          className="mt-3 font-sans text-[10px] tracking-[0.22em] uppercase"
-          style={{ color: tokens.chime }}
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'baseline',
+            flexWrap: 'wrap',
+            gap: 12,
+          }}
         >
-          Coming in Turn {turn}
+          <h1
+            className="serif"
+            style={{
+              fontSize: 36,
+              fontWeight: 600,
+              letterSpacing: '-0.02em',
+              color: tokens.text,
+              margin: 0,
+              lineHeight: 1.1,
+            }}
+          >
+            {mode}
+          </h1>
+          <span
+            className="label"
+            style={{ color: tokens.chime, letterSpacing: '0.16em' }}
+          >
+            Rebuilding in Turn {turn}
+          </span>
         </div>
       </div>
 
-      <div className="hairline mb-10" />
-
-      <p
-        className="font-serif text-[17px] leading-[1.55] max-w-[62ch]"
-        style={{ fontWeight: 340, color: tokens.ash }}
-      >
-        {description}
-      </p>
+      {note && (
+        <p
+          className="serif"
+          style={{
+            fontSize: 14,
+            fontStyle: 'italic',
+            color: tokens.muted,
+            lineHeight: 1.6,
+            maxWidth: '62ch',
+            margin: 0,
+          }}
+        >
+          {note}
+        </p>
+      )}
     </div>
   );
 }

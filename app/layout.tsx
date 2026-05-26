@@ -1,9 +1,7 @@
 import type { Metadata } from 'next';
 import { Fraunces, Manrope, JetBrains_Mono } from 'next/font/google';
 import { Header } from '@/components/shared/Header';
-import { Footer } from '@/components/shared/Footer';
 import { Providers } from '@/components/shared/Providers';
-import { createClient } from '@/lib/supabase/server';
 import './globals.css';
 
 const fraunces = Fraunces({
@@ -29,28 +27,28 @@ export const metadata: Metadata = {
   description: 'A clear note in the noise. Ideas before signals.',
 };
 
-export default async function RootLayout({
+export default function RootLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
-  const supabase = await createClient();
-  const {
-    data: { user },
-  } = await supabase.auth.getUser();
-
-  const headerUser = user ? { email: user.email ?? null } : null;
-
   return (
     <html
       lang="en"
       className={`${fraunces.variable} ${manrope.variable} ${jetbrainsMono.variable}`}
     >
-      <body className="min-h-screen bg-paper text-ink">
+      <body className="min-h-screen">
         <Providers>
-          <Header user={headerUser} />
-          <main className="max-w-6xl mx-auto px-6 sm:px-10 pb-24">{children}</main>
-          <Footer />
+          <Header />
+          <main
+            style={{
+              maxWidth: 920,
+              margin: '0 auto',
+              padding: '0 32px 96px',
+            }}
+          >
+            {children}
+          </main>
         </Providers>
       </body>
     </html>

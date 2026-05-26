@@ -4,25 +4,42 @@
 
 @layer base {
   body {
-    background: #F2EDE3;
-    color: #1a1a1a;
+    background: #16140f;
+    color: #ece4d3;
     font-family: var(--font-manrope), system-ui, sans-serif;
   }
 }
 
 @layer utilities {
-  .font-serif {
+  .serif {
+    font-family: var(--font-fraunces), Georgia, serif;
     font-feature-settings: 'ss01';
   }
-  .font-mono {
+  .sans {
+    font-family: var(--font-manrope), system-ui, sans-serif;
+  }
+  .mono {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
     font-feature-settings: 'ss02';
   }
   .nums {
     font-variant-numeric: tabular-nums;
   }
+  .label {
+    font-family: var(--font-jetbrains-mono), ui-monospace, monospace;
+    text-transform: uppercase;
+    letter-spacing: 0.16em;
+    font-size: 9.5px;
+  }
   .hairline {
-    background: #C9BFAB;
+    background: #2b2820;
     height: 1px;
+  }
+  .hairline-row {
+    transition: background 200ms ease;
+  }
+  .hairline-row:hover {
+    background: #1c1914;
   }
   .btn-quiet {
     transition: opacity 200ms ease;
@@ -38,5 +55,14 @@
   }
   .mode-pill {
     transition: color 180ms ease, border-color 180ms ease;
+  }
+}
+
+@keyframes pulse-glow {
+  0%, 100% {
+    box-shadow: 0 0 0 0 #d9803faa;
+  }
+  50% {
+    box-shadow: 0 0 0 6px #d9803f00;
   }
 }
