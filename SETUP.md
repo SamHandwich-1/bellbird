@@ -71,6 +71,33 @@ Confirm you have access to these (Claude Code will need them at various turns):
 - **FRED API key** — from [fred.stlouisfed.org/docs/api/api_key.html](https://fred.stlouisfed.org/docs/api/api_key.html) (free, instant)
 - **Polygon Massive API key** — from your Polygon dashboard
 
+### Database migrations and Storage
+
+The schema lives in `db/schema.sql` (initial create-everything script) plus incremental migrations under `db/migrations/`. Apply them in order via the Supabase SQL Editor on a fresh project, or whenever you pull a new turn that adds one.
+
+Current migrations:
+
+1. `db/schema.sql` — base tables (run once on a fresh project).
+2. `db/migrations/0001_supersede_pipeline_rows.sql` — soft-supersede mechanism for the Iterate flow.
+3. `db/migrations/0002_current_prices.sql` — manual current-price lookup per ticker.
+4. `db/migrations/0003_attachments.sql` — Develop-mode attachments table (images, PDFs, pasted text).
+5. `db/migrations/0004_message_iteration.sql` — iteration index on `messages` and `conversations` for IterationDivider rendering.
+6. `db/migrations/0005_storage_rls.sql` — Storage RLS policies for the `thesis-attachments` bucket. **Run this AFTER creating the bucket below — the policies target objects in that specific bucket.**
+
+### Storage: `thesis-attachments` bucket
+
+Develop-mode attachments (Item 13) upload binary content to a Supabase Storage bucket. One-time setup:
+
+1. In the Supabase dashboard, go to **Storage** → **New bucket**.
+2. Name: `thesis-attachments` (exact spelling — code references this string).
+3. Public bucket: **No** (private — reads happen via signed URLs only).
+4. File size limit: 10 MB (matches the client-side check in `AttachmentButton`).
+5. Allowed MIME types: leave empty (the client restricts to `image/png`, `image/jpeg`, `application/pdf` already).
+6. Create the bucket.
+7. Run `db/migrations/0005_storage_rls.sql` in the SQL Editor — this adds the INSERT/SELECT/DELETE policies on `storage.objects` for this bucket. Without these policies, uploads fail with *"new row violates row-level security policy"*.
+
+To verify: in Develop mode, click the paperclip in the chat input area, pick an image, and confirm the chip appears above the textarea without an error toast.
+
 ---
 
 ## Step 3: Install Claude Code

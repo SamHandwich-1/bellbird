@@ -46,7 +46,7 @@ function LoginForm() {
           </h1>
           <p
             className="font-serif text-[16px] leading-[1.6] max-w-[44ch]"
-            style={{ fontWeight: 340, color: tokens.ash }}
+            style={{ fontWeight: 340, color: tokens.body }}
           >
             A magic link is on its way to <span className="font-mono">{email}</span>. Click
             it from this device to sign in. The link expires in an hour.
@@ -72,7 +72,7 @@ function LoginForm() {
           </h1>
           <p
             className="font-sans text-[12px] leading-[1.6] mb-10"
-            style={{ color: tokens.ash }}
+            style={{ color: tokens.body }}
           >
             One link, one click. No passwords.
           </p>
@@ -95,7 +95,7 @@ function LoginForm() {
             className="font-serif text-[18px] w-full bg-transparent pb-2"
             style={{
               fontWeight: 340,
-              color: tokens.ink,
+              color: tokens.text,
               borderBottom: `1px solid ${tokens.hairline}`,
               outline: 'none',
             }}
@@ -116,8 +116,8 @@ function LoginForm() {
             disabled={pending}
             className="mt-10 font-sans text-[11px] tracking-[0.22em] uppercase btn-quiet inline-flex items-center gap-2"
             style={{
-              color: tokens.ink,
-              borderBottom: `1px solid ${tokens.ink}`,
+              color: tokens.text,
+              borderBottom: `1px solid ${tokens.text}`,
               paddingBottom: 4,
               opacity: pending ? 0.5 : 1,
             }}

@@ -149,8 +149,30 @@ export async function deleteTrade(id: string): Promise<ActionResult> {
   } = await supabase.auth.getUser();
   if (!user) return { error: 'Not signed in.' };
 
+  // Grab the ticker before the row is gone so we can check whether any other
+  // trades for the same ticker remain.
+  const { data: existing, error: readErr } = await supabase
+    .from('trades')
+    .select('ticker')
+    .eq('id', id)
+    .maybeSingle();
+  if (readErr) return { error: readErr.message };
+
   const { error } = await supabase.from('trades').delete().eq('id', id);
   if (error) return { error: error.message };
+
+  // Bug fix: when the deleted trade was the last one for that ticker,
+  // clear the matching current_prices row so a stale price doesn't survive
+  // the position being closed.
+  if (existing?.ticker) {
+    const { count, error: countErr } = await supabase
+      .from('trades')
+      .select('id', { count: 'exact', head: true })
+      .eq('ticker', existing.ticker);
+    if (!countErr && (count ?? 0) === 0) {
+      await supabase.from('current_prices').delete().eq('ticker', existing.ticker);
+    }
+  }
 
   revalidatePath('/portfolio');
   return { ok: true };

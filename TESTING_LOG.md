@@ -327,6 +327,34 @@ These were flagged in May's Turn 5 verification but never fixed. They affect alr
 
 ---
 
+## Turn B follow-up backlog
+
+Logged at end of Turn B (27 May 2026). Each is a deferred slice of something that landed in Turn B as chrome only — the schema or data layer wasn't ready, so the UI shipped with empty-state copy and the wiring is queued as its own follow-up.
+
+**Whisper end-to-end wiring.** VoiceButton ships in Turn B as UI chrome with a "coming soon" toast. The full wiring needs OpenAI as a second AI provider (env var), a `/api/transcribe` route, MediaRecorder client wiring, and toggle behaviour on Ctrl+Space. Own small follow-up turn.
+
+**ContextPane live wiring.** All three cards (Thesis emerging, Tickers · live, Recent fetches) ship as chrome with empty-state copy. Wiring depends on item 6 (live data fetching). When item 6 lands, populate Tickers + Recent fetches from the data trail and Thesis emerging from Phase 2 structured output.
+
+**Watch full wiring.** Watch ships in Turn B as functional skeleton, real data only. Trigger pills, conviction-delta, and directional gamma render as em-dashes until items 7 (triggers schema) and 9 (conviction history) land. When both land, light up the trigger pills, gamma arrows, and conviction-delta. Backing trigger filter tabs ("Triggers armed", "Triggers fired", "Kill-armed only") also wait on this.
+
+**Correlation clusters on Portfolio.** Mockup shows a Correlation clusters section at the bottom of Portfolio; no backing data exists. Section omitted from Portfolio in Turn B. `components/shared/CorrelationRow.tsx` ships for the follow-up to use. Wiring requires deciding how clusters are computed (manual tagging? sector-based heuristic? cross-thesis correlation matrix?). Pairs naturally with item 7 (triggers — what fires across multiple theses).
+
+**Library multi-select export (item 4).** Approved but not folded into Turn B's explicit in-scope list. Small turn — checkboxes on Library list + bulk export-as-markdown + print-friendly route.
+
+**Library discussion log viewer + markdown export (item 3 viewer half).** Saving half of item 3 already shipped in the backend-only turn. The Library detail page renders a PLANNED placeholder for Discussion log. Viewer UI + markdown export ship in this follow-up.
+
+**PLAN.md + CLAUDE.md scrub of "Phase 2 = Sonnet" references.** Phase 2 actually runs Opus, not Sonnet. Scrub both files for incorrect references in their own small turn before Turn 3 (pipeline prompt overhaul).
+
+**Develop input affordances — visible send + abort/cancel.** Current state: Enter-only submit, no way to cancel if Opus errors mid-stream. Add a visible send button next to the input area, and an abort/cancel button that surfaces while a request is in flight. Small UI turn, no schema.
+
+**ContextPane empty-state visual weight.** Three substantial-looking panels feel oppressive when empty and compete with the active conversation. Fix: drop the panel background on empty-state cards, keep just hairline + label + italic copy. Full panel treatment activates when the card has real data. Fold into the same follow-up turn that wires ContextPane live (Tickers + Recent fetches with item 6).
+
+**Cost tracking in Develop — running token/dollar counter per conversation.** Was in original Turn 3 plan; missing from v2 rebuild. Either regression from v1 Develop tree (now deleted in Phase 9 cleanup) or never built. Either way: needs to ship before Develop is considered complete. Folds naturally into the Develop polish turn.
+
+**Attachment rendering in conversation history.** The attachments table persists rows correctly and links them to messages, but DevelopChat doesn't render any indicator on saved messages showing what was attached. On page reload, attached files disappear from the UI even though they shaped the conversation. Fix: render attachment chips under saved messages, showing filename + click-to-preview (or click-to-download) affordance. Same Develop polish turn.
+
+---
+
 ## Recommended build sequence
 
 Slotted against PLAN.md, in this priority order:

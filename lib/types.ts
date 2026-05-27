@@ -134,6 +134,7 @@ export interface Conversation {
   thesis_id: string | null;
   title: string | null;
   status: ConversationStatus;
+  iteration: number;
   created_at: string;
   updated_at: string;
 }
@@ -146,6 +147,22 @@ export interface Message {
   phase: number | null;
   content: string;
   metadata: Record<string, unknown> | null;
+  iteration: number;
+  created_at: string;
+  attachments?: Attachment[];
+}
+
+export type AttachmentKind = 'image' | 'pdf' | 'text';
+
+export interface Attachment {
+  id: string;
+  message_id: string;
+  kind: AttachmentKind;
+  storage_path: string | null;
+  filename: string;
+  mime_type: string;
+  size_bytes: number | null;
+  content_text: string | null;
   created_at: string;
 }
 

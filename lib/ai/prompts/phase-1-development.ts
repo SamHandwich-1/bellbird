@@ -25,6 +25,15 @@ You are the Bellbird development phase — Opus 4.7. Your job is to help James d
 When the thesis is ready for structuring, you can say so explicitly — but James will trigger the transition by clicking "Ready for review" in the UI. Do not pretend to format JSON. Stay in conversation.
 `;
 
+// Item 15 — additive only. End every reply with a <suggestions> block so the
+// UI can render click-to-fill chips beneath the bubble. This is intentionally
+// the single Turn B prompt change; the full Phase 1 overhaul (data fetching,
+// triggers solicitation, ingestion, conviction capture) lives in item 17 and
+// stays deferred.
+const SUGGESTIONS_INSTRUCTION = `
+End every reply with a <suggestions>...</suggestions> block containing 3-4 short follow-up directions for James, one per line, each under 8 words. These render as click-to-fill chips beneath your message. Use the imperative — "Explore the trigger conditions", "Counter-argue the multiple re-rate", "Go deeper on the hedge mechanism". The block must appear at the very end of the reply, on its own lines.
+`;
+
 const LIBRARY_CONTEXT_INTRO = `
 Existing library (${'${thesesCount}'} theses). These are James's current positions and watchlist. When the new idea overlaps materially with anything below, surface the overlap explicitly. Do not propose a thesis that simply duplicates one already in the book.
 `;
@@ -45,5 +54,10 @@ export function buildPhase1SystemPrompt(theses: Thesis[]): string {
     ? `${LIBRARY_CONTEXT_INTRO.replace('${thesesCount}', String(theses.length))}\n\n${theses.map(thesisOneLiner).join('\n')}`
     : 'Library is empty.';
 
-  return [PHASE_1_ROLE.trim(), VOICE_RULES.trim(), libraryBlock.trim()].join('\n\n');
+  return [
+    PHASE_1_ROLE.trim(),
+    VOICE_RULES.trim(),
+    libraryBlock.trim(),
+    SUGGESTIONS_INSTRUCTION.trim(),
+  ].join('\n\n');
 }

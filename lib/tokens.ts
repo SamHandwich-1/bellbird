@@ -4,7 +4,7 @@
 // The "@deprecated v1 aliases" block at the bottom keeps Turn-1..5 component
 // trees compiling while they sit unrendered behind StubScreens during Turn A.
 // Cleanup obligations:
-//   - End of Turn B: delete library/develop/portfolio legacy trees.
+//   - End of Turn B: delete library/develop/portfolio legacy trees. ✓ Done.
 //   - End of Turn C: delete cycles legacy tree AND remove the v1 aliases below.
 
 export const tokens = {

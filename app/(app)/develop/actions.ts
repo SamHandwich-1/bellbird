@@ -109,9 +109,20 @@ export async function resetToPhase1(id: string): Promise<ActionResult> {
     .is('superseded_at', null);
   if (vErr) return { error: vErr.message };
 
+  // Bump iteration. The chat route reads conversations.iteration to stamp
+  // new messages — bumping here means the next user reply (and Opus turn)
+  // land in iteration N+1, which the UI walks to insert IterationDivider.
+  const { data: convRow, error: readErr } = await supabase
+    .from('conversations')
+    .select('iteration')
+    .eq('id', id)
+    .maybeSingle();
+  if (readErr) return { error: readErr.message };
+  const nextIteration = (convRow?.iteration ?? 0) + 1;
+
   const { error } = await supabase
     .from('conversations')
-    .update({ status: 'open', updated_at: now })
+    .update({ status: 'open', iteration: nextIteration, updated_at: now })
     .eq('id', id);
   if (error) return { error: error.message };
 

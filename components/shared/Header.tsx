@@ -14,7 +14,7 @@ const MODES: Mode[] = [
   { key: 'identity',  label: 'identity',  href: '/' },
   { key: 'library',   label: 'library',   href: '/library' },
   { key: 'develop',   label: 'develop',   href: '/develop' },
-  { key: 'watch',     label: 'watch' }, // activated in Turn B
+  { key: 'watch',     label: 'watch',     href: '/watch' },
   { key: 'portfolio', label: 'portfolio', href: '/portfolio' },
   { key: 'cycles',    label: 'cycles',    href: '/cycles' },
 ];
