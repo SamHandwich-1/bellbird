@@ -343,7 +343,7 @@ Logged at end of Turn B (27 May 2026). Each is a deferred slice of something tha
 
 **Library discussion log viewer + markdown export (item 3 viewer half).** Saving half of item 3 already shipped in the backend-only turn. The Library detail page renders a PLANNED placeholder for Discussion log. Viewer UI + markdown export ship in this follow-up.
 
-**PLAN.md + CLAUDE.md scrub of "Phase 2 = Sonnet" references.** Phase 2 actually runs Opus, not Sonnet. Scrub both files for incorrect references in their own small turn before Turn 3 (pipeline prompt overhaul).
+**Phase 2 Sonnet→Opus migration.** Currently runs Sonnet 4.6 in app/api/structure/route.ts. Decision made (pipeline quality > $3/thesis cost savings on $100k decisions) but code change never scheduled. Own future turn: change structure route to use Opus, update phase-2-structuring.ts self-identification, update phase-3 and phase-4 prompt references to upstream model, validate structured-output schema doesn't depend on Sonnet quirks, then scrub PLAN.md + CLAUDE.md. Don't bundle this with other work — testing burden of pipeline phase change needs its own verification.
 
 **Develop input affordances — visible send + abort/cancel.** Current state: Enter-only submit, no way to cancel if Opus errors mid-stream. Add a visible send button next to the input area, and an abort/cancel button that surfaces while a request is in flight. Small UI turn, no schema.
 

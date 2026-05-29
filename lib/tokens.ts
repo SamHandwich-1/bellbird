@@ -1,15 +1,8 @@
 // Bellbird v2 design tokens.
 //
 // Palette and FONT_STYLES are lifted from references/bellbird-mockup-v2-stack.jsx.
-// The "@deprecated v1 aliases" block at the bottom keeps Turn-1..5 component
-// trees compiling while they sit unrendered behind StubScreens during Turn A.
-// Cleanup obligations:
-//   - End of Turn B: delete library/develop/portfolio legacy trees. ✓ Done.
-//   - End of Turn C: delete cycles legacy tree AND remove the v1 aliases below.
 
 export const tokens = {
-  // ---- v2 palette --------------------------------------------------------
-
   // Surfaces
   bg:        '#16140f',
   panel:     '#1c1914',
@@ -39,15 +32,6 @@ export const tokens = {
   disconfirming: '#cf9a47', // amber
   kill:          '#c25234', // terracotta
   action:        '#d9803f', // chime
-
-  // ---- @deprecated v1 aliases — remove at end of Turn C ------------------
-  // Mapped to nearest v2 equivalents. Don't reference these in new code.
-  paper:   '#16140f', // → bg
-  mist:    '#1c1914', // → panel
-  surface: '#221e17', // → panelLift
-  ink:     '#ece4d3', // → text
-  ash:     '#cdc5b3', // → body
-  fade:    '#5c5648', // → faint
 } as const;
 
 export type Token = keyof typeof tokens;
