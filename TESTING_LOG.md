@@ -378,3 +378,30 @@ Sequence may need to flex around whatever turn of PLAN.md is currently live. Not
 ## Open decisions
 
 *None outstanding.*
+
+---
+
+## v2 rebuild complete (Turns A/B/C)
+
+**Dates:** Turn A 2026-05-26 · Turn B 2026-05-27 · Turn C 2026-05-29.
+
+### What shipped
+
+- **Foundation (A):** v2 design tokens + FONT_STYLES in `lib/tokens.ts` (dark-paper palette, chime accent, phase/conviction palette). Identity mode rebuilt end-to-end against v2 mockup. All other modes stubbed via `StubScreen` pending their turn.
+- **Compositional modes (B):** Library / Develop / Watch / Portfolio all rebuilt against v2. Shared component library landed in `components/shared/` (Section, PlannedSection, AllocationBar, ChatBubble, ContextPane, ConvictionGauge, HoldingRow, NewTradeButton, PositionsTable, TradeEntryModal, TradeRowActions, TriggerPill, VoiceButton, etc.). Old `/components/library`, `/components/develop`, `/components/portfolio` trees fully deleted.
+- **Cycles (C):** Now sub-tab — 5 stacked gauges (3 live from `cycle_overrides` for market/credit/juglar; rate + sentiment em-dashed pending schema extension), PlannedSections for Synthesis / Convergence map / Historical parallels. History sub-tab — single PlannedSection (no recharts, no chart shell). New `CycleGaugeBare` + `CycleOverrideForm` in `components/shared/`. `/components/cycles/*` (10 files) deleted. `lib/supabase/cycles-queries.ts` stripped to v2 surface. `@deprecated v1 token aliases` block removed from `lib/tokens.ts` — final v1 vestige retired.
+
+### What's still queued
+
+- **Phase 2 Sonnet→Opus migration** — own future turn, do not bundle. See entry above.
+- **Develop polish (Turn 3.x)** — 7-item backlog from real pipeline use: iterate UX re-anchoring, prompt prefill chips, attachments, table rendering, reopen-library-thesis, signals/triggers, conversation rename+delete (last item a Turn 3.1 candidate).
+- **Structured-content legibility (Turn 3.x)** — positions table + disagreement matrix re-delineation.
+- **Portfolio polish (Turn 4.x)** — share-count column on holdings; current-price-persists-after-trade-delete quirk.
+- **Cycles data layer (FRED + History)** — extend `cycle_overrides` (or new table) for numeric readings + key-metric fields covering all 5 v2 cycles; wire History sub-tab to real percentile data (charting library choice deferred until data is in hand). Pre-existing Turn 5 chart bugs (Buffett z reconciliation, HY history depth, upsertSeries pagination) carry into this turn.
+- **Pipeline prompt overhaul** — separate track per existing build sequence (step 5 above).
+
+### Process lessons
+
+- **Silent-skip pattern (caught after Turn B).** Turn B skipped a SETUP.md update without surfacing; user discovered post-ship. Mitigation since: plans now mark verification steps as "do not defer" explicitly, and manual-approval mode used on Turn C surfaces in-flight gaps before they reach commit.
+- **Decision-vs-implementation gap (caught DURING Turn C).** User stated "Phase 2 is Opus" as if implemented; production code still runs Sonnet. Repo-wide grep mid-execution surfaced the gap before the doc edit reached commit; full in-flight rollback executed. Project memory captured. Pattern lesson: a verbal architectural decision isn't real until the code change ships — verify code, not memory of the conversation.
+- **Manual approval mode value demonstrated.** Invoked on Turn C explicitly because of Turn B's silent skip. Friction cost on a turn this size was bounded; in return it enabled the Sonnet catch above. Worth keeping for high-stakes turns where doc edits cross with live code paths.
