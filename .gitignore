@@ -38,3 +38,4 @@ yarn-error.log*
 
 # prompt harness outputs
 scripts/prompt-harness/outputs/
+.claude/
