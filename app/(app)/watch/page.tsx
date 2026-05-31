@@ -1,17 +1,26 @@
-// Watch mode — new in Turn B. Mockup: references/bellbird-mockup-v2-stack.jsx
+// Watch mode. Mockup: references/bellbird-mockup-v2-stack.jsx
 //
-// Per Turn B interview decision 3: functional skeleton with real data only.
-// Trigger pills, gamma arrows, and conviction-delta render as em-dashes
-// until items 7 (triggers schema), 9 (conviction history), and the
-// downstream data fetcher land. Watch full wiring is a follow-up turn.
+// Turn D wires the triggers schema in. Filter tabs all live; row-expand
+// shows the per-thesis trigger list. Conviction delta and gamma direction
+// stay em-dashed pending item 9 (conviction history) — separate turn.
 
 import Link from 'next/link';
-import { tokens, cycleStageColor, convictionColor, formatStage } from '@/lib/tokens';
+import { tokens } from '@/lib/tokens';
 import { createClient } from '@/lib/supabase/server';
 import { getTheses } from '@/lib/supabase/queries';
-import { GammaArrow } from '@/components/shared/GammaArrow';
+import { getAllTriggers } from '@/lib/supabase/triggers-queries';
+import { WatchRow } from '@/components/shared/WatchRow';
+import type { Trigger } from '@/lib/types';
 
 export const dynamic = 'force-dynamic';
+
+type View = 'all' | 'portfolio' | 'armed' | 'fired' | 'kill';
+
+const VIEW_VALUES: View[] = ['all', 'portfolio', 'armed', 'fired', 'kill'];
+
+function parseView(raw: string | undefined): View {
+  return (VIEW_VALUES as string[]).includes(raw ?? '') ? (raw as View) : 'all';
+}
 
 type WatchSearchParams = Promise<{ view?: string }>;
 
@@ -21,26 +30,48 @@ export default async function WatchPage({
   searchParams: WatchSearchParams;
 }) {
   const params = await searchParams;
-  const view = params.view === 'portfolio' ? 'portfolio' : 'all';
+  const view = parseView(params.view);
 
-  const theses = await getTheses({
-    view: view === 'portfolio' ? 'portfolio' : 'all',
-  });
+  // The 'portfolio' tab filters at fetch time via the existing getTheses
+  // helper. Trigger-based tabs ('armed' / 'fired' / 'kill') filter after
+  // we've grouped triggers by thesis.
+  const baseFilter = view === 'portfolio' ? 'portfolio' : 'all';
+  const theses = await getTheses({ view: baseFilter });
 
   const supabase = await createClient();
-  const { data: positionsData } = await supabase
-    .from('positions')
-    .select('thesis_id');
+  const { data: positionsData } = await supabase.from('positions').select('thesis_id');
   const positionThesisIds = new Set(
     (positionsData ?? [])
       .map((p) => p.thesis_id)
       .filter((id): id is string => !!id),
   );
 
-  const rows = theses.map((t) => ({
-    thesis: t,
-    inPortfolio: t.in_portfolio || positionThesisIds.has(t.id),
-  }));
+  const allTriggers = await getAllTriggers();
+  const triggersByThesis = new Map<string, Trigger[]>();
+  for (const t of allTriggers) {
+    const list = triggersByThesis.get(t.thesis_id) ?? [];
+    list.push(t);
+    triggersByThesis.set(t.thesis_id, list);
+  }
+
+  const totalFired = allTriggers.filter((t) => t.status === 'fired').length;
+
+  const rows = theses
+    .map((t) => ({
+      thesis: t,
+      inPortfolio: t.in_portfolio || positionThesisIds.has(t.id),
+      triggers: triggersByThesis.get(t.id) ?? [],
+    }))
+    .filter(({ triggers }) => {
+      if (view === 'armed') return triggers.some((t) => t.status === 'armed');
+      if (view === 'fired') return triggers.some((t) => t.status === 'fired');
+      if (view === 'kill') {
+        return triggers.some(
+          (t) => t.type === 'kill-on-sight' && t.status === 'armed',
+        );
+      }
+      return true;
+    });
 
   return (
     <div>
@@ -76,7 +107,8 @@ export default async function WatchPage({
           className="mono nums"
           style={{ fontSize: 10.5, color: tokens.faint, letterSpacing: '0.08em' }}
         >
-          {rows.length} ACTIVE · 0 TRIGGERS FIRED
+          {theses.length} ACTIVE · {totalFired}{' '}
+          {totalFired === 1 ? 'TRIGGER' : 'TRIGGERS'} FIRED
         </div>
       </div>
 
@@ -96,9 +128,15 @@ export default async function WatchPage({
         <FilterTab href="/watch?view=portfolio" active={view === 'portfolio'}>
           In portfolio
         </FilterTab>
-        <DisabledTab>Triggers armed</DisabledTab>
-        <DisabledTab>Triggers fired</DisabledTab>
-        <DisabledTab>Kill-armed only</DisabledTab>
+        <FilterTab href="/watch?view=armed" active={view === 'armed'}>
+          Triggers armed
+        </FilterTab>
+        <FilterTab href="/watch?view=fired" active={view === 'fired'}>
+          Triggers fired
+        </FilterTab>
+        <FilterTab href="/watch?view=kill" active={view === 'kill'}>
+          Kill-armed only
+        </FilterTab>
       </div>
 
       {rows.length === 0 ? (
@@ -115,8 +153,19 @@ export default async function WatchPage({
           No theses in this view.
         </p>
       ) : (
-        rows.map(({ thesis, inPortfolio }) => (
-          <WatchRow key={thesis.id} thesis={thesis} inPortfolio={inPortfolio} />
+        rows.map(({ thesis, inPortfolio, triggers }) => (
+          <WatchRow
+            key={thesis.id}
+            thesis={{
+              id: thesis.id,
+              name: thesis.name,
+              cycle_stage: thesis.cycle_stage,
+              conviction: thesis.conviction,
+              updated_at: thesis.updated_at,
+            }}
+            inPortfolio={inPortfolio}
+            triggers={triggers}
+          />
         ))
       )}
 
@@ -131,129 +180,11 @@ export default async function WatchPage({
           maxWidth: '62ch',
         }}
       >
-        Triggers, conviction trajectory, and directional gamma surface here when their schemas land.
-        Until then, Watch is the manual roll call of the book; once Wedgetail comes online, fired
+        Click any thesis to expand its triggers. Conviction trajectory and directional
+        gamma surface here when their schemas land; once Wedgetail comes online, fired
         triggers will surface as notifications and draft commands.
       </p>
     </div>
-  );
-}
-
-function WatchRow({
-  thesis,
-  inPortfolio,
-}: {
-  thesis: {
-    id: string;
-    name: string;
-    cycle_stage: string | null;
-    conviction: number;
-    updated_at: string;
-  };
-  inPortfolio: boolean;
-}) {
-  const conv = convictionColor(thesis.conviction);
-  const cyc = cycleStageColor(thesis.cycle_stage as never);
-
-  return (
-    <Link
-      href={`/library/${thesis.id}`}
-      className="hairline-row btn-quiet"
-      style={{
-        display: 'grid',
-        gridTemplateColumns: '1fr auto auto',
-        gap: 24,
-        padding: '22px 4px',
-        alignItems: 'center',
-        borderBottom: `1px solid ${tokens.line}`,
-        textDecoration: 'none',
-        color: 'inherit',
-      }}
-    >
-      <div>
-        <div style={{ display: 'flex', alignItems: 'baseline', gap: 10, marginBottom: 6 }}>
-          <h3
-            className="serif"
-            style={{
-              fontSize: 20,
-              fontWeight: 600,
-              color: tokens.text,
-              margin: 0,
-              letterSpacing: '-0.01em',
-            }}
-          >
-            {thesis.name}
-          </h3>
-          {inPortfolio && (
-            <span
-              style={{
-                width: 6,
-                height: 6,
-                borderRadius: '50%',
-                background: tokens.chime,
-                boxShadow: `0 0 6px ${tokens.chime}aa`,
-              }}
-            />
-          )}
-        </div>
-        <div
-          style={{
-            display: 'flex',
-            gap: 14,
-            marginBottom: 0,
-            alignItems: 'center',
-            flexWrap: 'wrap',
-          }}
-        >
-          {thesis.cycle_stage && (
-            <span className="label" style={{ color: cyc }}>
-              {formatStage(thesis.cycle_stage).toLowerCase()}
-            </span>
-          )}
-          <span
-            className="mono"
-            style={{ fontSize: 10, color: tokens.faint, letterSpacing: '0.06em' }}
-          >
-            UPDATED {formatShortDate(thesis.updated_at).toUpperCase()}
-          </span>
-          <span
-            className="mono"
-            style={{ fontSize: 10, color: tokens.faint, letterSpacing: '0.06em' }}
-            title="Triggers schema lands in a follow-up turn"
-          >
-            TRIGGERS —
-          </span>
-        </div>
-      </div>
-
-      <div style={{ textAlign: 'right' }}>
-        <div className="label" style={{ color: tokens.faint, marginBottom: 4 }}>
-          Gamma
-        </div>
-        <GammaArrow direction={null} />
-      </div>
-
-      <div style={{ textAlign: 'right', minWidth: 80 }}>
-        <div
-          className="mono nums"
-          style={{ fontSize: 32, fontWeight: 700, color: conv, lineHeight: 1 }}
-        >
-          {thesis.conviction}
-        </div>
-        <div
-          className="mono nums"
-          style={{
-            fontSize: 10,
-            color: tokens.faint,
-            marginTop: 4,
-            letterSpacing: '0.04em',
-          }}
-          title="Conviction delta lands when conviction history ships"
-        >
-          — · 3MO
-        </div>
-      </div>
-    </Link>
   );
 }
 
@@ -281,34 +212,4 @@ function FilterTab({
       {children}
     </Link>
   );
-}
-
-function DisabledTab({ children }: { children: React.ReactNode }) {
-  return (
-    <span
-      className="label"
-      title="Lights up when triggers schema ships"
-      style={{
-        color: tokens.faint,
-        opacity: 0.5,
-        paddingBottom: 6,
-        marginBottom: -15,
-        cursor: 'not-allowed',
-      }}
-    >
-      {children}
-    </span>
-  );
-}
-
-function formatShortDate(iso: string): string {
-  try {
-    return new Date(iso).toLocaleDateString('en-AU', {
-      day: 'numeric',
-      month: 'short',
-      year: 'numeric',
-    });
-  } catch {
-    return iso;
-  }
 }

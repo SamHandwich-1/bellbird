@@ -27,8 +27,8 @@ export type IndicatorCategory =
   | 'capex'
   | 'equity_valuation'
   | 'sentiment';
-export type TriggerPriority = 'high' | 'medium' | 'low';
-export type TriggerStatus = 'pending' | 'fired' | 'dismissed';
+export type TriggerType = 'confirming' | 'disconfirming' | 'kill-on-sight';
+export type TriggerStatus = 'armed' | 'fired' | 'disarmed';
 
 export interface Thesis {
   id: string;
@@ -243,12 +243,13 @@ export interface MergedCycleReading {
 export interface Trigger {
   id: string;
   thesis_id: string;
-  label: string;
-  trigger_date: string | null;
-  priority: TriggerPriority;
+  type: TriggerType;
+  description: string;
+  monitoring_signal: string | null;
+  threshold: string | null;
   status: TriggerStatus;
-  notes: string | null;
   created_at: string;
+  updated_at: string;
 }
 
 export interface NewsItem {

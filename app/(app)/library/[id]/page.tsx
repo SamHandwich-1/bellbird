@@ -2,10 +2,14 @@ import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { tokens, cycleStageColor, convictionColor } from '@/lib/tokens';
 import { getThesisById, getPositionsForThesis } from '@/lib/supabase/queries';
+import { getTriggersForThesis } from '@/lib/supabase/triggers-queries';
 import { Section } from '@/components/shared/Section';
 import { ConvictionGauge } from '@/components/shared/ConvictionGauge';
 import { PositionsTable } from '@/components/shared/PositionsTable';
 import { PlannedSection } from '@/components/shared/PlannedSection';
+import { TriggerDetailRow } from '@/components/shared/TriggerDetailRow';
+import { TriggerRowActions } from '@/components/shared/TriggerRowActions';
+import { AddTriggerButton } from '@/components/shared/AddTriggerButton';
 
 export const dynamic = 'force-dynamic';
 
@@ -35,6 +39,7 @@ export default async function ThesisDetailPage({ params }: { params: Params }) {
   if (!thesis) notFound();
 
   const positions = await getPositionsForThesis(thesis.id);
+  const triggers = await getTriggersForThesis(thesis.id);
   const conv = convictionColor(thesis.conviction);
   const cyc = cycleStageColor(thesis.cycle_stage);
 
@@ -173,10 +178,43 @@ export default async function ThesisDetailPage({ params }: { params: Params }) {
         </Section>
       )}
 
-      <PlannedSection
+      <Section
         label="Triggers"
-        sub="Per-thesis invalidation conditions — confirming, disconfirming, kill-on-sight, action. Lights up when the triggers schema ships."
-      />
+        right={`${triggers.length} ${triggers.length === 1 ? 'trigger' : 'triggers'}`}
+      >
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'flex-end',
+            marginBottom: triggers.length === 0 ? 12 : 4,
+          }}
+        >
+          <AddTriggerButton thesisId={thesis.id} />
+        </div>
+        {triggers.length === 0 ? (
+          <p
+            className="serif"
+            style={{
+              fontSize: 13.5,
+              fontStyle: 'italic',
+              color: tokens.muted,
+              margin: 0,
+              lineHeight: 1.55,
+            }}
+          >
+            No triggers yet. Add one to start tracking invalidation conditions.
+          </p>
+        ) : (
+          triggers.map((t) => (
+            <TriggerDetailRow
+              key={t.id}
+              trigger={t}
+              actions={<TriggerRowActions trigger={t} />}
+            />
+          ))
+        )}
+      </Section>
+
       <PlannedSection
         label="Conviction history"
         sub="Timestamped trajectory of conviction changes, each linked to the discussion that produced it."

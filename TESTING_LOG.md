@@ -405,3 +405,28 @@ Sequence may need to flex around whatever turn of PLAN.md is currently live. Not
 - **Silent-skip pattern (caught after Turn B).** Turn B skipped a SETUP.md update without surfacing; user discovered post-ship. Mitigation since: plans now mark verification steps as "do not defer" explicitly, and manual-approval mode used on Turn C surfaces in-flight gaps before they reach commit.
 - **Decision-vs-implementation gap (caught DURING Turn C).** User stated "Phase 2 is Opus" as if implemented; production code still runs Sonnet. Repo-wide grep mid-execution surfaced the gap before the doc edit reached commit; full in-flight rollback executed. Project memory captured. Pattern lesson: a verbal architectural decision isn't real until the code change ships — verify code, not memory of the conversation.
 - **Manual approval mode value demonstrated.** Invoked on Turn C explicitly because of Turn B's silent skip. Friction cost on a turn this size was bounded; in return it enabled the Sonnet catch above. Worth keeping for high-stakes turns where doc edits cross with live code paths.
+
+---
+
+## Turn D — triggers (2026-06-01)
+
+### What shipped
+
+- **Triggers schema (item 7).** v1 `triggers` table dropped and recreated in the Wedgetail-ready shape: `type` (confirming / disconfirming / kill-on-sight), `description`, `monitoring_signal`, `threshold` (both nullable for qualitative entries), `status` (armed / fired / disarmed). Migration `0006_triggers.sql` self-contained — DROP cascades the v1 policy from `db/policies.sql` and the migration recreates RLS. `db/schema.sql` triggers block also updated to the v2 shape for from-scratch installs.
+- **Watch fully wired.** All five filter tabs working (`all` / `portfolio` / `armed` / `fired` / `kill`), real counts per row, derived kill-armed count (type='kill-on-sight' AND status='armed'), real top-of-page fired tally, row expansion via `<WatchRow>` showing per-thesis `TriggerDetailRow` list. Thesis-name link stops propagation so it navigates without collapsing.
+- **Library detail triggers editor.** `PlannedSection` placeholder replaced with a real `Section`: list of `TriggerDetailRow`s with edit/delete affordances, "Add trigger" button opening `TriggerEntryModal` (modal pattern matches `TradeEntryModal`).
+
+### File-count delta
+
+- Plan said 7 new files; shipped **8**. `AddTriggerButton.tsx` was added mid-build to match the `NewTradeButton.tsx` precedent (button-that-opens-modal as its own thin client wrapper). Flagged before writing; no scope drift.
+- One incidental cleanup: removed dead `TriggerType` + `triggerTypeColor` exports from `lib/tokens.ts` (Turn A speculation, never consumed). Necessary to avoid a name collision with the new domain `TriggerType` in `lib/types.ts`.
+
+### What's still em-dashed on Watch
+
+- **Conviction delta** and **directional gamma** remain em-dashed. Both depend on item 9 (conviction history) which is its own future turn — explicitly out of Turn D scope.
+
+### Out of scope, untouched
+
+- Live trigger firing / cron evaluation. Manual entry only.
+- `'action'` trigger type from the mockup — Wedgetail-side concern.
+- Phase 2 Sonnet→Opus migration. Develop polish. A/B/C surfaces beyond the direct trigger wiring.

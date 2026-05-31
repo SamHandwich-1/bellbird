@@ -114,17 +114,25 @@ CREATE TABLE news_items (
   created_at TIMESTAMPTZ DEFAULT now()
 );
 
--- Triggers: for Watch mode (v1.1+)
+-- Triggers: per-thesis invalidation conditions (item 7). Manual entry in v1;
+-- Wedgetail consumes the same shape for automation later. Three types:
+-- confirming, disconfirming, kill-on-sight. 'kill-armed' is derived
+-- (type='kill-on-sight' AND status='armed'), not a status value.
+-- monitoring_signal and threshold are nullable so qualitative triggers can
+-- be entered description-only.
 CREATE TABLE triggers (
-  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-  thesis_id TEXT REFERENCES theses(id) ON DELETE CASCADE,
-  label TEXT NOT NULL,
-  trigger_date DATE,
-  priority TEXT DEFAULT 'medium',
-  status TEXT DEFAULT 'pending',             -- 'pending' | 'fired' | 'dismissed'
-  notes TEXT,
-  created_at TIMESTAMPTZ DEFAULT now()
+  id                UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  thesis_id         TEXT NOT NULL REFERENCES theses(id) ON DELETE CASCADE,
+  type              TEXT NOT NULL CHECK (type IN ('confirming', 'disconfirming', 'kill-on-sight')),
+  description       TEXT NOT NULL,
+  monitoring_signal TEXT,
+  threshold         TEXT,
+  status            TEXT NOT NULL DEFAULT 'armed' CHECK (status IN ('armed', 'fired', 'disarmed')),
+  created_at        TIMESTAMPTZ NOT NULL DEFAULT now(),
+  updated_at        TIMESTAMPTZ NOT NULL DEFAULT now()
 );
+
+CREATE INDEX idx_triggers_thesis ON triggers(thesis_id);
 
 -- Macro indicators: time series cached from FRED for Cycles page
 CREATE TABLE macro_indicators (
@@ -169,4 +177,7 @@ CREATE TRIGGER theses_updated_at BEFORE UPDATE ON theses
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();
 
 CREATE TRIGGER conversations_updated_at BEFORE UPDATE ON conversations
+  FOR EACH ROW EXECUTE FUNCTION update_updated_at();
+
+CREATE TRIGGER triggers_updated_at BEFORE UPDATE ON triggers
   FOR EACH ROW EXECUTE FUNCTION update_updated_at();

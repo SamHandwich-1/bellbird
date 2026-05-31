@@ -69,9 +69,3 @@ export function convictionColor(value: number): string {
 export function formatStage(stage: string | null | undefined): string {
   return stage ? stage.toUpperCase().replace(/-/g, ' ') : '';
 }
-
-export type TriggerType = 'confirming' | 'disconfirming' | 'kill' | 'action';
-
-export function triggerTypeColor(type: TriggerType): string {
-  return tokens[type];
-}

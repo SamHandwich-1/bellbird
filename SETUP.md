@@ -83,6 +83,7 @@ Current migrations:
 4. `db/migrations/0003_attachments.sql` — Develop-mode attachments table (images, PDFs, pasted text).
 5. `db/migrations/0004_message_iteration.sql` — iteration index on `messages` and `conversations` for IterationDivider rendering.
 6. `db/migrations/0005_storage_rls.sql` — Storage RLS policies for the `thesis-attachments` bucket. **Run this AFTER creating the bucket below — the policies target objects in that specific bucket.**
+7. `db/migrations/0006_triggers.sql` — Triggers schema (Turn D). Drops the v1 `triggers` table and recreates it in the item-7 shape: `type` (`confirming` | `disconfirming` | `kill-on-sight`), `description`, `monitoring_signal`, `threshold`, `status` (`armed` | `fired` | `disarmed`). Includes RLS recreation since DROP cascades the policy from `db/policies.sql`.
 
 ### Storage: `thesis-attachments` bucket
 
