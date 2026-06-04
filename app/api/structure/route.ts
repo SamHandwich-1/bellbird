@@ -1,5 +1,5 @@
 import { generateObject } from 'ai';
-import { sonnet } from '@/lib/ai/anthropic';
+import { opus } from '@/lib/ai/anthropic';
 import { PHASE_2_SYSTEM_PROMPT } from '@/lib/ai/prompts/phase-2-structuring';
 import { structuredThesisSchema } from '@/lib/ai/schemas';
 import { createClient } from '@/lib/supabase/server';
@@ -36,7 +36,7 @@ export async function POST(req: Request) {
 
   try {
     const result = await generateObject({
-      model: sonnet,
+      model: opus,
       system: PHASE_2_SYSTEM_PROMPT,
       schema: structuredThesisSchema,
       prompt: `Conversation transcript:\n\n${transcript}\n\nProduce the structured thesis record.`,
@@ -47,7 +47,7 @@ export async function POST(req: Request) {
       conversation_id: conversationId,
       role: 'assistant',
       content: JSON.stringify(result.object),
-      model: 'sonnet-4.6',
+      model: 'opus-4.7',
       phase: 2,
       metadata: {
         input_tokens: result.usage.promptTokens ?? 0,

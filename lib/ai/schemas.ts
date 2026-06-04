@@ -10,7 +10,7 @@ export const cycleStageEnum = z.enum([
 
 export const positionSideEnum = z.enum(['long', 'short', 'hedge']);
 
-// Phase 2 — Sonnet structures the developed thesis into a library-shaped record.
+// Phase 2 — Opus structures the developed thesis into a library-shaped record.
 export const structuredThesisSchema = z.object({
   name: z.string().min(1).describe('Short editorial name, e.g. "Grid Resilience"'),
   sector: z.string().min(1).describe('Sector or cross-sector tag, e.g. "Industrials × Utilities"'),
@@ -18,7 +18,7 @@ export const structuredThesisSchema = z.object({
   timing: z.string().min(1).describe('Horizon, e.g. "18-24 months" or "3-5 years"'),
   cycle_stage: cycleStageEnum,
   summary: z.string().min(40).describe('Editorial summary, 3-6 sentences. Considered, quietly confident, sentence case.'),
-  hedge_note: z.string().min(20).describe('Hedge or risk-isolation note. Empty string if truly long-only.'),
+  hedge_note: z.string().min(20).describe('Hedge note for hedged theses; for long-only theses, document the source of the asymmetry (natural asymmetry, structural protection, sizing rationale). Never empty.'),
   positions: z
     .array(
       z.object({
