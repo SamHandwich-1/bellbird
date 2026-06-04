@@ -10,7 +10,7 @@ This file is automatically loaded by Claude Code at the start of every session i
 
 **Who it's for:** Single user (James). Personal financial tooling. AU-based investor, AUD base currency, trades via IBKR, crypto via CoinSpot.
 
-**What it does in v1:** Develops investment theses through a structured AI pipeline (Opus → Sonnet → Grok → Opus adjudication), maintains a library of 19+ theses with cycle-stage classification, tracks portfolio positions linked to theses, monitors economic cycles via a macro indicator dashboard.
+**What it does in v1:** Develops investment theses through a structured AI pipeline (Opus development → Opus structuring → Grok stress test → Opus adjudication), maintains a library of 19+ theses with cycle-stage classification, tracks portfolio positions linked to theses, monitors economic cycles via a macro indicator dashboard.
 
 ## Read these before doing anything
 
@@ -26,8 +26,7 @@ This file is automatically loaded by Claude Code at the start of every session i
 - **Database:** Supabase (Postgres + Auth + Storage)
 - **Hosting:** Vercel
 - **AI models:**
-  - **Anthropic Claude Opus 4.7** — primary for thesis development conversations, adjudication
-  - **Anthropic Claude Sonnet 4.6** — secondary for structuring, library operations, news triage
+  - **Anthropic Claude Opus 4.7** — all Bellbird-side phases (Phase 1 development, Phase 2 structuring, Phase 4 adjudication)
   - **xAI Grok-4** — adversarial stress testing (always-on in pipeline)
 - **Data sources (deferred to later turns):**
   - **FRED API** — macro indicators for Cycles page
@@ -99,7 +98,7 @@ The project is built in five sequential turns. Each turn ends with something dep
 
 1. **Turn 1 (current/starting):** Project skeleton — Next.js + Tailwind + Supabase setup, design tokens, root layout, Identity page (the home), Postgres schema, stub pages for other modes
 2. **Turn 2:** Supabase auth + Library mode (full CRUD on theses, filters, seed 19 theses from references)
-3. **Turn 3:** Develop mode — the Opus → Sonnet → Grok → Opus pipeline with adjudication UI
+3. **Turn 3:** Develop mode — the Opus development → Opus structuring → Grok stress test → Opus adjudication pipeline with adjudication UI
 4. **Turn 4:** Portfolio mode — manual position entry, basic P&L
 5. **Turn 5:** Cycles mode + FRED data layer + daily refresh cron + traffic-light dashboard
 
@@ -111,15 +110,15 @@ This is unusual and worth explaining upfront because it shapes the entire Develo
 
 **Phase 1 — Initial development (Opus 4.7):** User describes a thesis fragment. Opus engages in substantive back-and-forth. Pushes back, challenges, develops mechanism. Iterates until user marks "ready for review." Slower turns (8-20s) are acceptable here — this is the IP-generating phase.
 
-**Phase 2 — Structuring (Sonnet 4.6):** Takes the developed thesis from Phase 1. Formats into structured JSON for the library. Generates position table with weights. Writes hedge note in book style. Fast, cheap, deterministic.
+**Phase 2 — Structuring (Opus 4.7):** Takes the developed thesis from Phase 1. Produces the structured library record — name, sector, conviction, timing, cycle stage, summary, hedge note, positions. The judgment that matters here is in *expression*, not substance: faithful structuring of Phase 1's reasoning, with thought applied to hedge-note phrasing (for long-only theses, document the source of the asymmetry rather than invent a hedge), conviction inference when no number was named, and the cleanest expression of a multi-ticker basket. Not a re-litigation of the thesis.
 
 **Phase 3 — Adversarial review (Grok-4):** Auto-fires on every new thesis. Returns strongest contrarian argument + structured "where models disagree" matrix. Never optional.
 
 **Phase 4 — Adjudication (Opus 4.7):** Reads structured thesis + Grok's pushback. Returns verdict: `PROCEED` / `STRESS_TEST` / `CLARIFY` / `DISCARD`. Always with explicit reasoning. User can challenge; Opus re-evaluates with counter-argument; both logged.
 
-**Why this architecture:** Sonnet alone produces too many low-quality theses that need to be discarded later (wasted cost). Opus at the front catches issues earlier. Sonnet is reserved for purely mechanical formatting work where reasoning depth is wasted. Grok forces adversarial pressure on every thesis automatically. Opus adjudicates at the gate, with reasoning.
+**Why this architecture:** Bellbird is investment-thesis infrastructure for $100k-scale decisions; the per-thesis model cost is bounded against the size of the decision the thesis informs. Opus end-to-end on the Bellbird side because the structuring step is non-trivial (a "fast and mechanical" Phase 2 produces empty hedge notes and default-65 convictions, both of which are decisions in their own right). Grok is the always-on adversarial pressure, distinct enough in voice and training that its contrarian arguments don't collapse into Opus's own reasoning. Phase 4 adjudication sits at the gate with explicit reasoning so verdicts are auditable.
 
-Implementation lives in `app/api/chat/route.ts` (streaming Opus), `app/api/structure/route.ts` (Sonnet), `app/api/stress-test/route.ts` (Grok), `app/api/adjudicate/route.ts` (Opus).
+Implementation lives in `app/api/chat/route.ts` (streaming Opus), `app/api/structure/route.ts` (Opus), `app/api/stress-test/route.ts` (Grok), `app/api/adjudicate/route.ts` (Opus).
 
 ## Environment variables
 

@@ -38,9 +38,8 @@ Data flows: ideas → Bellbird → Wedgetail (triggers) → Bowerbird (decisions
 | Auth | Supabase Auth, magic link | Single user, no password management |
 | State | TanStack Query | Server state caching |
 | Hosting | Vercel | Auto-deploy from main branch |
-| Primary AI | Anthropic Opus 4.7 | Thesis development, adjudication |
-| Secondary AI | Anthropic Sonnet 4.6 | Structuring, library operations |
-| Adversarial AI | xAI Grok-4 | Stress testing, contrarian view |
+| Bellbird AI | Anthropic Opus 4.7 | Phase 1 development, Phase 2 structuring, Phase 4 adjudication |
+| Adversarial AI | xAI Grok-4 | Phase 3 stress test, contrarian view |
 
 ### The four-phase AI pipeline (core architectural decision)
 
@@ -54,8 +53,8 @@ This is the defining architecture of the Develop mode. Every thesis flows throug
                        │
                        ▼  (user marks "ready for review")
 ┌────────────────────────────────────────────────────┐
-│ PHASE 2: Structuring (Sonnet 4.6)                  │
-│ Fast, deterministic. Format thesis as JSON.        │
+│ PHASE 2: Structuring (Opus 4.7)                    │
+│ Faithful structuring of Phase 1's reasoning.       │
 └────────────────────────────────────────────────────┘
                        │
                        ▼
@@ -90,7 +89,7 @@ bellbird/
 │   │   └── login/page.tsx
 │   ├── api/
 │   │   ├── chat/route.ts         # Opus streaming for Phase 1
-│   │   ├── structure/route.ts    # Sonnet for Phase 2
+│   │   ├── structure/route.ts    # Opus for Phase 2
 │   │   ├── stress-test/route.ts  # Grok for Phase 3
 │   │   ├── adjudicate/route.ts   # Opus for Phase 4
 │   │   ├── seed/route.ts         # One-time thesis import
@@ -403,7 +402,7 @@ Each turn ends with something deployable and testable.
 **Deliverables:**
 - `app/(app)/develop/page.tsx` — full chat UI per mockup
 - `app/api/chat/route.ts` — Opus streaming endpoint (Phase 1)
-- `app/api/structure/route.ts` — Sonnet structuring (Phase 2)
+- `app/api/structure/route.ts` — Opus structuring (Phase 2)
 - `app/api/stress-test/route.ts` — Grok stress test (Phase 3)
 - `app/api/adjudicate/route.ts` — Opus adjudication (Phase 4)
 - `lib/ai/anthropic.ts` — Anthropic client wrapper

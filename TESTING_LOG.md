@@ -293,7 +293,7 @@ Items below are additions or changes to be slotted against PLAN.md, not a parall
 - Now that the spine is complete, the harness work resumes. **Consolidated with items 6, 7, 8, 9** rather than run separately — those items are themselves prompt-redesign work, and using the harness to test them in isolation from the broader fine-tuning would mean doing the prompts twice.
 - Agreed sequence (from May):
   1. Best-practices brief and test fragments
-  2. Phase 2 JSON contract (Sonnet structured output)
+  2. Phase 2 JSON contract (Opus structured output)
   3. Phase 1 variants (Opus development conversation) — fold in items 6 (data fetching + price guardrail), 7 (triggers solicitation), 8 (conversational re-entry / ingestion)
   4. Phase 3 variants (Grok stress-test, Munger inversion)
   5. Phase 4 and challenge prompt (Opus adjudication, Klarman downside-first verdict, + item 9 conviction-change capture)
@@ -310,6 +310,13 @@ Items below are additions or changes to be slotted against PLAN.md, not a parall
 - Prompt work is open-ended in a way the rebuild isn't. Easier to bound risk by doing the rebuild first (predictable scope) and the prompt work second (open-ended but isolated).
 
 **Build slot:** After v2 rebuild Turn C, before any other backlog work. Treated as its own dedicated track — small approve-and-execute mini-steps rather than one big block.
+
+### Phase 2 prompt — open questions surfaced during 2026-06-03 Sonnet→Opus migration
+
+Both items fold into the item-17 harness track when Phase 2 JSON-contract work runs. Not gating the migration commit; logged here so they're not lost.
+
+- **Staged/reserved positions — target weight vs deployed weight.** In the Cyber Dispersion side-by-side, Opus read CRWD as `weight: 40` (target weight when reserved-leg triggers fire) while the prior Sonnet output read it as `weight: 0` (deployed today). Both defensible reads of the conversation. Needs a settled convention, tested through the harness, because it changes how Portfolio allocation reads every staged leg. Resolve before the next thesis with a reserved-leg structure enters the book.
+- **Conviction inference when the conversation didn't name a number.** The 2026-06-03 migration test transcript stated 65, so the inference-when-missing case went untested. Verify on the next real thesis where no number is named: does Opus derive a thoughtful conviction from the discussion's tenor, or default to 65? If it defaults, sharpen the inference instruction in the Phase 2 prompt during the harness track.
 
 ---
 
