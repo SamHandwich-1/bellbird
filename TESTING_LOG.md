@@ -296,14 +296,14 @@ Items below are additions or changes to be slotted against PLAN.md, not a parall
   2. **Test fragments** — 6 scenarios with sidecar checklists under `scripts/prompt-harness/fragments/` (shipped, commit `ce8222f`)
   3. **Retrospective acceptance check** — apply `brief.md` to live `lib/ai/prompts/phase-{1,2,3,4}-*.ts`; log per-phase tuning items into this log for steps 5–8 to address
   4. **Tuning infrastructure** — scratch-prompt seeding into `scripts/prompt-harness/prompts/` (one starting variant per phase, copied from live), runner recursion fix for nested fragment dirs (one-level recurse in `listInputFiles`), library-snapshot bake into the Phase 1 scratch copy used against scenario 4
-  5. **Phase 2 variants** — JSON contract / structuring; folds in the open questions surfaced during the 2026-06-03 Sonnet→Opus migration (staged-vs-deployed weight convention, conviction inference when no number named)
+  5. **Phase 4 variants + challenge prompt** — Klarman downside-first verdict, folding item 9 (conviction-change capture)
   6. **Phase 1 variants** — folding items 6 (data fetching + price guardrail), 7 (triggers solicitation), 8 (conversational re-entry / ingestion)
   7. **Phase 3 variants** — Grok stress-test, inversion discipline
-  8. **Phase 4 variants + challenge prompt** — Klarman downside-first verdict, folding item 9 (conviction-change capture)
+  8. **Phase 2 variants** — JSON contract / structuring; folds in the open questions surfaced during the 2026-06-03 Sonnet→Opus migration (staged-vs-deployed weight convention, conviction inference when no number named)
   9. **Harness comparison runs across variants** — sweep the winning candidates against the full fragment set
   10. **Finals** — promote winning variants back to live `lib/ai/prompts/*.ts` as deliberate commits, one per phase
 
-  Order of phase-tuning steps 5–8 is provisional — confirmed by step 3's divergence findings. The current ordering lists Phase 2 first because its JSON contract is structurally tightest and unblocks downstream phases that consume its output shape, but step 3 may surface a reason to re-sequence.
+  Order of phase-tuning steps 5–8 confirmed by step 3's divergence findings (see step-3 output sub-section below). Phase 4 leads because the brief audit surfaced a direct contradiction in its DISCARD definition (D4.1). Phase 2 trails because the audit found its prompt the tightest of the four — its remaining work is the two open questions in the sub-section above, not brief-divergence items.
 
 **Why now and not earlier:**
 - The original argument for parking ("finish the spine first") is satisfied — Turn 5 shipped clean.
@@ -318,10 +318,40 @@ Items below are additions or changes to be slotted against PLAN.md, not a parall
 
 ### Phase 2 prompt — open questions surfaced during 2026-06-03 Sonnet→Opus migration
 
-Both items fold into step 5 (Phase 2 variants) of the canonical harness sequence above. Not gating the migration commit; logged here so they're not lost.
+Both items fold into step 8 (Phase 2 variants) of the canonical harness sequence above. Not gating the migration commit; logged here so they're not lost.
 
 - **Staged/reserved positions — target weight vs deployed weight.** In the Cyber Dispersion side-by-side, Opus read CRWD as `weight: 40` (target weight when reserved-leg triggers fire) while the prior Sonnet output read it as `weight: 0` (deployed today). Both defensible reads of the conversation. Needs a settled convention, tested through the harness, because it changes how Portfolio allocation reads every staged leg. Resolve before the next thesis with a reserved-leg structure enters the book.
 - **Conviction inference when the conversation didn't name a number.** The 2026-06-03 migration test transcript stated 65, so the inference-when-missing case went untested. Verify on the next real thesis where no number is named: does Opus derive a thoughtful conviction from the discussion's tenor, or default to 65? If it defaults, sharpen the inference instruction in the Phase 2 prompt during the harness track.
+
+### Step 3 output — per-phase tuning backlog (2026-06-05)
+
+Retrospective acceptance check applied `brief.md` to live `lib/ai/prompts/phase-{1,2,3,4}-*.ts`. Disqualifier sweep for author names came back clean across all four prompts. The step-3 working file is at `~/.claude/plans/harness-step-3-humming-ullman.md` (read-only artefact, not committed). Findings below.
+
+Per divergence: severity (HIGH / MEDIUM / LOW) + **direct edit** (apply to live prompt as a one-off commit, no harness needed) OR **A/B** (run through the harness in step 4+). Step 4 (tuning infrastructure) only needs scratch copies for A/B items — direct edits can land before or alongside infrastructure, since they re-apply explicit brief decisions and don't need variant comparison.
+
+**Step 5 — Phase 4 (highest divergence)**
+- **D4.1 — DISCARD trigger: remove "duplicates existing book exposure" clause.** Book-overlap is Phase 1 information, not a Phase 4 verdict input. Brief explicitly removed it; live prompt (line 11 of `phase-4-adjudication.ts`) still has it. *HIGH. Direct edit.*
+- **D4.2 — PROCEED: add asymmetric-standard framing** — "bar to proceed is higher than bar to question." *MEDIUM. A/B.*
+- **D4.3 — DISCARD: add high-bar framing** — "DISCARD threshold is high; preserves the 'if anything can be killed, nothing is' discipline." *MEDIUM. A/B.* Pairs thematically with D4.1 ("DISCARD is rare"); measure D4.3 A/B against the post-D4.1 baseline so the variants don't trip over each other.
+- **D4.4 — Reasoning: add audit-trail framing** — verdict and reasoning should be auditable months later from the reasoning alone. *LOW. Direct edit.*
+
+**Step 6 — Phase 1 (high divergence)**
+- **D1.1 — Add reference-class / base-rate prompting** — when the user reaches for a story, reach for the reference class: base rate, comparable cohort, has this worked before / when. *HIGH. A/B.* Antidote to narrative framing; core to the second-level-thinking approach. The meaty one — most likely to surface multiple variant directions. D1.3 (mechanism-vs-narrative contrast) folds into this A/B; same variant set, both speak to narrative-resistance.
+- **D1.2 — Enumerate "ready" criteria** — mechanism named, contrarian view engaged not dismissed, hedge sketched, basket provisional but discussable. *LOW-MED. Direct edit.*
+- **D1.4 — `<suggestions>` block** — not a gap; preserve the feature when Phase 1 is tuned. *Awareness only.*
+
+**Step 7 — Phase 3 (low divergence)**
+- **D3.1 — Add "moralizing" to the disqualifier list** alongside strawman and surface details. *LOW. Direct edit.*
+- **D3.2 — Name severity as the disagreement matrix's calibration principle** (not just a per-row field — the matrix should be ordered/weighted by it). *LOW. Direct edit.*
+
+**Step 8 — Phase 2 (lowest divergence — no brief-divergence work)**
+- **D2.1 — `.min(20)` prompt-level reminder: skip.** Schema enforces; substance ("never empty") already in prompt.
+- **D2.2 — Readiness summary line: skip.** Effectively implicit.
+- Phase 2's only tuning items are the two open questions in the sub-section above (staged-vs-deployed weight convention; conviction-inference-when-no-number-named). Independent of the brief audit.
+
+**Step 4 implication.** A/B items: D4.2, D4.3, D1.1 (with D1.3 folded). Tuning infrastructure (scratch prompts under `scripts/prompt-harness/prompts/`, runner recursion fix, library-snapshot bake for scenario 4) only needs scratch copies for **Phase 4 and Phase 1**. Phase 3 and Phase 2 are out of scope for this round of step 4 — Phase 3 ships as direct edits only, Phase 2 has no brief-divergence items.
+
+**Direct-edit batch summary.** Five direct edits across three phases: D4.1 + D4.4 (Phase 4), D1.2 (Phase 1), D3.1 + D3.2 (Phase 3). Can land as a single prompts-only commit ahead of harness infrastructure work, or interleaved per phase with each phase's A/B work — sequencing TBD when steps 5–7 begin.
 
 ---
 
