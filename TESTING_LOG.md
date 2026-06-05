@@ -291,14 +291,19 @@ Items below are additions or changes to be slotted against PLAN.md, not a parall
 **Decided:**
 - The prompt-testing harness already exists at `scripts/prompt-harness/` (committed in the Turn 3.1 chain). Direct SDKs, max-tokens 4096, temperature 0.4. Never used — tuning work was deferred to finish the five-turn spine first.
 - Now that the spine is complete, the harness work resumes. **Consolidated with items 6, 7, 8, 9** rather than run separately — those items are themselves prompt-redesign work, and using the harness to test them in isolation from the broader fine-tuning would mean doing the prompts twice.
-- Agreed sequence (from May):
-  1. Best-practices brief and test fragments
-  2. Phase 2 JSON contract (Opus structured output)
-  3. Phase 1 variants (Opus development conversation) — fold in items 6 (data fetching + price guardrail), 7 (triggers solicitation), 8 (conversational re-entry / ingestion)
-  4. Phase 3 variants (Grok stress-test, Munger inversion)
-  5. Phase 4 and challenge prompt (Opus adjudication, Klarman downside-first verdict, + item 9 conviction-change capture)
-  6. Harness comparison runs across variants
-  7. Finals to Claude Code
+- Canonical harness sequence (this is the single home for step numbering — `brief.md` references these by name, not number; `PLAN.md` §9 #11 points here too):
+  1. **Best-practices brief** — yardstick for variant judgement (shipped, commit `a3d02b2`)
+  2. **Test fragments** — 6 scenarios with sidecar checklists under `scripts/prompt-harness/fragments/` (shipped, commit `ce8222f`)
+  3. **Retrospective acceptance check** — apply `brief.md` to live `lib/ai/prompts/phase-{1,2,3,4}-*.ts`; log per-phase tuning items into this log for steps 5–8 to address
+  4. **Tuning infrastructure** — scratch-prompt seeding into `scripts/prompt-harness/prompts/` (one starting variant per phase, copied from live), runner recursion fix for nested fragment dirs (one-level recurse in `listInputFiles`), library-snapshot bake into the Phase 1 scratch copy used against scenario 4
+  5. **Phase 2 variants** — JSON contract / structuring; folds in the open questions surfaced during the 2026-06-03 Sonnet→Opus migration (staged-vs-deployed weight convention, conviction inference when no number named)
+  6. **Phase 1 variants** — folding items 6 (data fetching + price guardrail), 7 (triggers solicitation), 8 (conversational re-entry / ingestion)
+  7. **Phase 3 variants** — Grok stress-test, inversion discipline
+  8. **Phase 4 variants + challenge prompt** — Klarman downside-first verdict, folding item 9 (conviction-change capture)
+  9. **Harness comparison runs across variants** — sweep the winning candidates against the full fragment set
+  10. **Finals** — promote winning variants back to live `lib/ai/prompts/*.ts` as deliberate commits, one per phase
+
+  Order of phase-tuning steps 5–8 is provisional — confirmed by step 3's divergence findings. The current ordering lists Phase 2 first because its JSON contract is structurally tightest and unblocks downstream phases that consume its output shape, but step 3 may surface a reason to re-sequence.
 
 **Why now and not earlier:**
 - The original argument for parking ("finish the spine first") is satisfied — Turn 5 shipped clean.
@@ -313,7 +318,7 @@ Items below are additions or changes to be slotted against PLAN.md, not a parall
 
 ### Phase 2 prompt — open questions surfaced during 2026-06-03 Sonnet→Opus migration
 
-Both items fold into the item-17 harness track when Phase 2 JSON-contract work runs. Not gating the migration commit; logged here so they're not lost.
+Both items fold into step 5 (Phase 2 variants) of the canonical harness sequence above. Not gating the migration commit; logged here so they're not lost.
 
 - **Staged/reserved positions — target weight vs deployed weight.** In the Cyber Dispersion side-by-side, Opus read CRWD as `weight: 40` (target weight when reserved-leg triggers fire) while the prior Sonnet output read it as `weight: 0` (deployed today). Both defensible reads of the conversation. Needs a settled convention, tested through the harness, because it changes how Portfolio allocation reads every staged leg. Resolve before the next thesis with a reserved-leg structure enters the book.
 - **Conviction inference when the conversation didn't name a number.** The 2026-06-03 migration test transcript stated 65, so the inference-when-missing case went untested. Verify on the next real thesis where no number is named: does Opus derive a thoughtful conviction from the discussion's tenor, or default to 65? If it defaults, sharpen the inference instruction in the Phase 2 prompt during the harness track.
@@ -374,7 +379,7 @@ Slotted against PLAN.md, in this priority order:
 
 4. **v2 rebuild — Turn C: Cycles in full.** Both sub-pages with SubTabs navigation, multi-gauge Now dashboard, percentile chart, equity panel with drawdown/price toggle. Most complex turn — adds the recharts layer (syncId, percentile normalisation, NBER bands, era markers, AreaChart for drawdown) and real data integration (S&P daily closes, Buffett indicator series, NBER dates). **Resolve the three Cycles-related bugs while in this turn: Buffett z reconciliation, HY spreads history depth, upsertSeries pagination.** Cycles ships last because it depends on settled tokens *and* real data plumbing.
 
-5. **Pipeline prompt overhaul** (item 17, consolidating items 6, 7, 8, 9). Use the existing harness to fine-tune all four phase prompts and bake in the new behaviours: live data fetching with price guardrail, triggers solicitation, conversational re-entry / ingestion, conviction-change capture. Open-ended scope but isolated — runs against the now-settled v2 UI. Sequence: best-practices brief → Phase 2 JSON contract → Phase 1 variants → Phase 3 variants → Phase 4 + challenge → comparison → finals.
+5. **Pipeline prompt overhaul** (item 17, consolidating items 6, 7, 8, 9). Use the existing harness to fine-tune all four phase prompts and bake in the new behaviours: live data fetching with price guardrail, triggers solicitation, conversational re-entry / ingestion, conviction-change capture. Open-ended scope but isolated — runs against the now-settled v2 UI. See item 17 for the canonical step list.
 
 6. **Deferred:** item 10 (calibration loop) and item 2 (active/on-hold → Wedgetail).
 

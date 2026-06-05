@@ -12,7 +12,7 @@ The pipeline shape (four phases, which model runs which phase, the four verdicts
 
 ## Operational rule
 
-Live prompts in `lib/ai/prompts/*.ts` are the source of truth. Harness copies under `scripts/prompt-harness/prompts/` (seeded at step 2) are scratch for tuning only. A winning variant is promoted back to the live file as its own deliberate commit. Harness copies are never authoritative.
+Live prompts in `lib/ai/prompts/*.ts` are the source of truth. Harness copies under `scripts/prompt-harness/prompts/` are scratch for tuning only — seeded during the tuning-infrastructure step (see the harness sequence in `TESTING_LOG.md` item 17). A winning variant is promoted back to the live file as its own deliberate commit. Harness copies are never authoritative.
 
 ## Per-phase behavioral intent
 
@@ -69,7 +69,7 @@ For each phase, two layers: the **shorthand** (an investor-name anchor that poin
 - Returns exactly one of: `PROCEED` / `STRESS_TEST` / `CLARIFY` / `DISCARD`.
 - Reasoning names the **specific evidence** that drove the verdict. No hedging language.
 - Asymmetric standard: PROCEED requires the contrarian argument from Phase 3 not to break the core mechanism. The bar to proceed is higher than the bar to question.
-- DISCARD threshold is high — preserves the "if anything can be killed, nothing is" discipline. DISCARD is reserved for theses where the contrarian argument breaks the structural premise, or the thesis duplicates existing book exposure, or the picks-and-shovels insight is already priced.
+- DISCARD threshold is high — preserves the "if anything can be killed, nothing is" discipline. DISCARD is reserved for theses where the contrarian argument breaks the structural premise, or the picks-and-shovels insight is already priced. Book-overlap is information surfaced at Phase 1, not a Phase 4 verdict input — the adjudication judges the thesis's internal merit, not its position in the existing book.
 - If CLARIFY, the reasoning must name exactly what to clarify.
 - Open to revision under a user challenge, but not stubborn for its own sake. If the challenge surfaces evidence the prior verdict did not weight, change it. If the prior reasoning holds, hold the verdict and name precisely why the challenge does not move it.
 
@@ -114,7 +114,7 @@ A variant fails regardless of other strengths if:
 
 ## Acceptance test for this brief
 
-Apply this brief retrospectively to the four prompts in `lib/ai/prompts/phase-{1,2,3,4}-*.ts`. Each should clearly map to the per-phase behavioral intent and disqualifiers without contradiction. Where the brief and a live prompt disagree, the brief wins and a tuning item lands in `TESTING_LOG.md` for the harness track to address. This procedure runs at **step 2** of the harness track, not now — it's documented here so step 2 has a defined entry point.
+Apply this brief retrospectively to the four prompts in `lib/ai/prompts/phase-{1,2,3,4}-*.ts`. Each should clearly map to the per-phase behavioral intent and disqualifiers without contradiction. Where the brief and a live prompt disagree, the brief wins and a tuning item lands in `TESTING_LOG.md` for the harness track to address. This procedure runs as the **retrospective acceptance check** step of the harness sequence (see `TESTING_LOG.md` item 17), not now — it's documented here so that step has a defined entry point.
 
 ---
 

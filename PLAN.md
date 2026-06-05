@@ -547,7 +547,7 @@ Logged after v1 shipped (2026-05-22). Items are surfaced and grouped, not priori
 
 ### D. Strategic work parked
 
-11. **Phase 1-4 system prompts.** Currently first-draft scaffolding from Claude Code. Real prompts to be developed in dedicated prompt-development chat work — Marks/Mauboussin behavioural specs for Phase 1, fidelity-only Phase 2, Munger inversion for Phase 3, Klarman downside-first for Phase 4. Plus a challenge-loop prompt for contested verdicts. Harness already committed at 31c02db for A/B testing variants.
+11. **Phase 1-4 system prompts.** Currently first-draft scaffolding from Claude Code. Real prompts to be developed in dedicated prompt-development chat work — Marks/Mauboussin behavioural specs for Phase 1, fidelity-only Phase 2, Munger inversion for Phase 3, Klarman downside-first for Phase 4. Plus a challenge-loop prompt for contested verdicts. Harness already committed at 31c02db for A/B testing variants. Canonical harness step sequence lives in `TESTING_LOG.md` item 17.
 
 ### E. v1.1+ items (mirroring §6 for one-stop reference)
 
