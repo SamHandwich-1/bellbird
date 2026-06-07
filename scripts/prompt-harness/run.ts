@@ -35,13 +35,31 @@ function usage(): never {
   process.exit(1);
 }
 
+// One-level recursion. Top-level: include .md/.txt as-is (loose prompts/fragments
+// live here). Sub-folders: ALLOW-LIST only files matching `phase-*.{md,txt}`. The
+// allow-list is intentional — scenario folders ship sidecars like `expected.md`
+// (reviewer checklist) that must never be sent to a model. A deny-list would not
+// survive future sidecars; the pattern lock does.
 function listInputFiles(dir: string): string[] {
   const out: string[] = [];
   for (const name of readdirSync(dir)) {
     const full = join(dir, name);
-    if (!statSync(full).isFile()) continue;
-    const ext = extname(name).toLowerCase();
-    if (ext === '.md' || ext === '.txt') out.push(full);
+    const stat = statSync(full);
+    if (stat.isFile()) {
+      const ext = extname(name).toLowerCase();
+      if (ext === '.md' || ext === '.txt') out.push(full);
+      continue;
+    }
+    if (stat.isDirectory()) {
+      for (const inner of readdirSync(full)) {
+        const innerFull = join(full, inner);
+        if (!statSync(innerFull).isFile()) continue;
+        const ext = extname(inner).toLowerCase();
+        if (ext !== '.md' && ext !== '.txt') continue;
+        if (!inner.toLowerCase().startsWith('phase-')) continue;
+        out.push(innerFull);
+      }
+    }
   }
   return out.sort();
 }
