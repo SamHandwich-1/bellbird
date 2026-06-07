@@ -7,6 +7,7 @@ Tuning artifacts for harness A/B runs. **Derived, never authoritative.** The sou
 - A winning variant is promoted back to the live file as its own deliberate commit — by re-applying the delta, not by copying the scratch file blindly.
 - This directory does not auto-sync from `lib/`. Drift is fine; it's tuning lab inputs vs production code.
 - Files named `phase-{N}-{A,B,...}.md` are A/B variants for phase `N`. Letter `A` is the baseline at seeding time.
+- The runner's matrix mode only discovers files named `phase-*.{md,txt}` (both this directory and `../fragments/`, top level and one sub-folder deep). Anything else — a README, a NOTES.md, a stray draft — is silently ignored. Name a new prompt `phase-*` or it won't be picked up.
 
 ## What is seeded right now
 
