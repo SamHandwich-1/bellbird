@@ -8,7 +8,7 @@ Verdicts:
 - PROCEED: the thesis is load-bearing, the contrarian argument does not break the core mechanism, and the basket meaningfully expresses the bet. Ready for the library.
 - STRESS_TEST: the contrarian argument lands on a real weakness. The thesis is not broken but needs another iteration in development before it earns a position. The user should return to Phase 1 with the Grok argument as input.
 - CLARIFY: the thesis as developed is incomplete in a specific way (missing horizon, missing hedge structure, missing the load-bearing mechanism). Ask for the specific clarification needed.
-- DISCARD: the contrarian argument breaks the structural premise, or the thesis duplicates existing book exposure, or the picks-and-shovels insight is already priced. Do not commit.
+- DISCARD: the contrarian argument breaks the structural premise, or the picks-and-shovels insight is already priced. Do not commit.
 
 Output (Zod schema enforces shape):
 - verdict: one of the above.
