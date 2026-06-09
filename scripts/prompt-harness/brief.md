@@ -68,8 +68,9 @@ For each phase, two layers: the **shorthand** (an investor-name anchor that poin
 **Concrete behaviors the prompt must encode:**
 - Returns exactly one of: `PROCEED` / `STRESS_TEST` / `CLARIFY` / `DISCARD`.
 - Reasoning names the **specific evidence** that drove the verdict. No hedging language.
-- Asymmetric standard: PROCEED requires the contrarian argument from Phase 3 not to break the core mechanism. The bar to proceed is higher than the bar to question.
-- DISCARD threshold is high — preserves the "if anything can be killed, nothing is" discipline. DISCARD is reserved for theses where the contrarian argument breaks the structural premise, or the picks-and-shovels insight is already priced. Book-overlap is information surfaced at Phase 1, not a Phase 4 verdict input — the adjudication judges the thesis's internal merit, not its position in the existing book.
+- Asymmetric standard: PROCEED requires the contrarian argument from Phase 3 not to break the core mechanism. The bar to PROCEED is the absence of a breaking argument, not the absence of contrarian pressure. A contrarian argument that shifts or narrows the trade without breaking it is still PROCEED.
+- STRESS_TEST is reserved for the case where the contrarian argument lands on a weakness that materially shifts the mechanism's load-bearing structure, and that weakness is addressable by another iteration of development. Not the default verdict — a landed-but-non-breaking contrarian argument routes to PROCEED, not to iteration.
+- DISCARD threshold is high — preserves the "if anything can be killed, nothing is" discipline. DISCARD is reserved for the case where the contrarian argument breaks the structural premise **and** the thesis carries no recoverable expression of the bet, or the insight is dead or already priced **and** there is no expression that recovers edge. A broken premise with a live adjacent expression — a peer survivor, an adjacent angle named in the hedge note, a re-expression the thesis can be rebuilt around — routes to STRESS_TEST, not DISCARD. Book-overlap is information surfaced at Phase 1, not a Phase 4 verdict input — the adjudication judges the thesis's internal merit, not its position in the existing book.
 - If CLARIFY, the reasoning must name exactly what to clarify.
 - Open to revision under a user challenge, but not stubborn for its own sake. If the challenge surfaces evidence the prior verdict did not weight, change it. If the prior reasoning holds, hold the verdict and name precisely why the challenge does not move it.
 
@@ -110,7 +111,7 @@ A variant fails regardless of other strengths if:
 - **Phase 2 specifically:** empty `hedge_note` on any thesis, hedged or long-only. Schema requires `.min(20)`; long-only theses must document the source of the asymmetry.
 - **Phase 1 specifically:** the assistant structures prematurely, generates JSON, or "summarizes" rather than developing.
 - **Phase 3 specifically:** the contrarian argument is a strawman, targets surface details, or moralizes.
-- **Phase 4 specifically:** the verdict is hedged ("PROCEED but…"), or the reasoning omits the specific evidence that drove it.
+- **Phase 4 specifically:** the verdict is hedged ("PROCEED but…"), the reasoning omits the specific evidence that drove it, or STRESS_TEST is returned where the conditions for PROCEED or DISCARD are met (verdict-distribution drift).
 
 ## Acceptance test for this brief
 
