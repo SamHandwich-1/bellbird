@@ -361,6 +361,15 @@ Promotion queue above executed. **Step 5 (Phase 4) is closed — no remaining Ph
 - **Verified across three boundary poles.** uranium → PROCEED, mall-REIT → STRESS_TEST, Veridian → DISCARD. All three verdicts reachable and correctly split from honest inputs — the STRESS_TEST attractor (D4.6) is resolved.
 - **B and C retired from the A/B queue** (supersedes the "parked / re-runnable" note in the 2026-06-09 closure queue, item 3). D4.2 (B, asymmetric-standard) and D4.3 (C, high-bar DISCARD) earn nothing against live D: **C is subsumed** — it is the weaker form of D's two-leg DISCARD gate (broken-with-nothing-recoverable / dead-insight already carries C's "if anything can be killed, nothing is" discipline, more strongly). **B is counter to D** — its "favour STRESS_TEST when the contrarian lands on load-bearing weight" is inverse-polarity to D's PROCEED carve-in ("a landed-but-non-breaking contrarian argument is grounds for PROCEED, not iteration"), so re-running it would re-open the exact attractor D4.6 killed. Retired, not parked. Scratch files stay on disk as audit trail only.
 
+### Step 7 CLOSED (2026-06-10)
+
+Phase 3 ships as direct edits only per the step-3 findings — no A/B work, no scratch copies. Both landed in `lib/ai/prompts/phase-3-stress-test.ts` as a single prompts-only commit:
+
+- **D3.1 — moralizing added to the disqualifier line.** The contrarian_argument spec now reads "not a strawman, and not moralizing. Argue against the bet, not against making it." Matches the brief's Phase 3 disqualifier and the rubric's phase-fit criterion ("Phase 3 doesn't moralize").
+- **D3.2 — severity named as the matrix's calibration principle.** Matrix instruction now orders rows by severity, highest first, with the brief's framing: how much each disagreement moves the bet, not the headcount of disagreements.
+
+Phase 3 has no remaining tuning items. Outstanding direct edits from the step-3 batch: **D1.2** (Phase 1 ready-criteria enumeration) — left unlanded deliberately so it doesn't cross with step 6 Phase 1 variant work in flight.
+
 ---
 
 These were flagged in May's Turn 5 verification but never fixed. They affect already-built code that will be touched during the v2 rebuild (Turn C especially). Documented here so they're not lost.
