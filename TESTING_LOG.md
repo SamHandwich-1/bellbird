@@ -353,6 +353,14 @@ Per divergence: severity (HIGH / MEDIUM / LOW) + **direct edit** (apply to live 
 
 **Direct-edit batch summary.** Five direct edits across three phases: D4.1 + D4.4 (Phase 4), D1.2 (Phase 1), D3.1 + D3.2 (Phase 3). Can land as a single prompts-only commit ahead of harness infrastructure work, or interleaved per phase with each phase's A/B work — sequencing TBD when steps 5–7 begin.
 
+### Step 5 CLOSED (2026-06-10)
+
+Promotion queue above executed. **Step 5 (Phase 4) is closed — no remaining Phase 4 harness work.**
+
+- **D promoted to live.** D's verdict architecture is now `PHASE_4_SYSTEM_PROMPT` in `lib/ai/prompts/phase-4-adjudication.ts` (commit `763b4e2`). Route confirmed: `app/api/adjudicate/route.ts` imports `PHASE_4_SYSTEM_PROMPT` and passes it as the `system` arg of the `generateObject` call, so production runs the promoted prompt.
+- **Verified across three boundary poles.** uranium → PROCEED, mall-REIT → STRESS_TEST, Veridian → DISCARD. All three verdicts reachable and correctly split from honest inputs — the STRESS_TEST attractor (D4.6) is resolved.
+- **B and C retired from the A/B queue** (supersedes the "parked / re-runnable" note in the 2026-06-09 closure queue, item 3). D4.2 (B, asymmetric-standard) and D4.3 (C, high-bar DISCARD) earn nothing against live D: **C is subsumed** — it is the weaker form of D's two-leg DISCARD gate (broken-with-nothing-recoverable / dead-insight already carries C's "if anything can be killed, nothing is" discipline, more strongly). **B is counter to D** — its "favour STRESS_TEST when the contrarian lands on load-bearing weight" is inverse-polarity to D's PROCEED carve-in ("a landed-but-non-breaking contrarian argument is grounds for PROCEED, not iteration"), so re-running it would re-open the exact attractor D4.6 killed. Retired, not parked. Scratch files stay on disk as audit trail only.
+
 ---
 
 These were flagged in May's Turn 5 verification but never fixed. They affect already-built code that will be touched during the v2 rebuild (Turn C especially). Documented here so they're not lost.
