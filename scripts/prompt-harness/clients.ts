@@ -1,13 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-export type Model = 'opus' | 'sonnet' | 'grok';
-export const MODELS: readonly Model[] = ['opus', 'sonnet', 'grok'] as const;
+export type Model = 'opus' | 'sonnet' | 'grok' | 'fable';
+export const MODELS: readonly Model[] = ['opus', 'sonnet', 'grok', 'fable'] as const;
 
 export const MODEL_IDS: Record<Model, string> = {
   opus: 'claude-opus-4-7',
   sonnet: 'claude-sonnet-4-6',
   grok: 'grok-4',
+  fable: 'claude-fable-5',
 };
 
 function requireEnv(key: string): string {
@@ -59,10 +60,14 @@ export async function callModel(
 ): Promise<CallResult> {
   const t0 = Date.now();
 
-  if (model === 'opus' || model === 'sonnet') {
+  if (model === 'opus' || model === 'sonnet' || model === 'fable') {
     // Opus 4.7 + Sonnet 4.6 deprecated `temperature`; Anthropic rejects requests
-    // that include it. The CLI flag still parses for parity with Grok runs but
-    // is intentionally NOT forwarded here.
+    // that include it. Fable 5 removes it outright, and additionally requires the
+    // `thinking` param to be omitted entirely (always-on adaptive thinking — an
+    // explicit config 400s). The CLI flag still parses for parity with Grok runs
+    // but is intentionally NOT forwarded here. Fable's thinking tokens count
+    // toward max_tokens; pass --max-tokens 16000 on fable runs so the verdict
+    // isn't truncated by reasoning spend.
     const res = await anthropicClient().messages.create({
       model: MODEL_IDS[model],
       max_tokens: opts.maxTokens,
