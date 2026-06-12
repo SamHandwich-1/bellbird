@@ -349,6 +349,8 @@ Per divergence: severity (HIGH / MEDIUM / LOW) + **direct edit** (apply to live 
 
   **Fix (promotion queue).** See step-5 closure sub-section below for the queued promotion turn.
 
+- **D4.7 — Should Phase 4 re-express routing surface author-excluded adjacent expressions?** Source: item 19 fragment-12 route variance, accepted by operator ruling 2026-06-13.
+
 **Step 6 — Phase 1 (high divergence)**
 - **D1.1 — Add reference-class / base-rate prompting** — when the user reaches for a story, reach for the reference class: base rate, comparable cohort, has this worked before / when. *HIGH. A/B.* Antidote to narrative framing; core to the second-level-thinking approach. The meaty one — most likely to surface multiple variant directions. D1.3 (mechanism-vs-narrative contrast) folds into this A/B; same variant set, both speak to narrative-resistance.
 - **D1.2 — Enumerate "ready" criteria** — mechanism named, contrarian view engaged not dismissed, hedge sketched, basket provisional but discussable. *LOW-MED. Direct edit.*
@@ -543,3 +545,76 @@ Sequence may need to flex around whatever turn of PLAN.md is currently live. Not
 - Live trigger firing / cron evaluation. Manual entry only.
 - `'action'` trigger type from the mockup — Wedgetail-side concern.
 - Phase 2 Sonnet→Opus migration. Develop polish. A/B/C surfaces beyond the direct trigger wiring.
+
+---
+
+## 19. Fable 5 gate — Phase 4 prompt re-verification (2026-06-12)
+
+**Status:** ✅ Ruled PASS (2026-06-13) — 9/9 ratified. Fragment 12 route variance
+accepted by operator ruling (see per-run notes).
+**Scope:** Harness verification only. No live-file edits, no promotion, no tuning.
+
+Model swaps void prompt verification the same way prompt edits do. Before any
+claude-fable-5 migration ($10/$50 per MTok), the promoted Phase 4 prompt was
+re-run on Fable against the three boundary poles.
+
+**Tested pair.** `prompts/eval-fable-phase-4.md` × `claude-fable-5`. Scratch =
+live `PHASE_4_SYSTEM_PROMPT` minus the "— Opus 4.8" self-label (single edit,
+diff-verified; named outside the `phase-*` matrix allow-list deliberately).
+The label-free text must not land in lib/ ahead of the Fable migration, or
+production becomes an unverified (text, opus-4.7) pair.
+
+**Gate design.** N=3 per fragment; pass requires 3/3 verdict consistency per
+fragment, any flip = miss. Verdict content is the criterion — prose-vs-JSON
+format drift logged but not a miss (item-18 precedent). stop_reason
+max_tokens/length or API 400 = infra-fail → rerun, not a miss. On any verdict
+miss: same scratch on opus N=3 against the missed fragment(s) to de-confound
+the label edit from the model swap (did not fire). Operator rules; harness
+reports verbatim.
+
+**Per-run results** (all stop_reason=end_turn; total $0.589):
+
+| Fragment | Expected | Runs | Output files (outputs/, gitignored) |
+|---|---|---|---|
+| 11 uranium | PROCEED | PROCEED ×3 | 20260612133552 / 133611 / 133626 -fable-eval-fable-phase-4-phase-4-input.md |
+| 12 mall-REITs | STRESS_TEST | STRESS_TEST ×3 | 20260612133706 / 133733 / 133759 -… |
+| 13 Veridian | DISCARD | DISCARD ×3 | 20260612133822 / 133831 / 133841 -… |
+
+No D4.6 attractor signature on 11 (all three runs invoked the shifts/narrows
+carve-in). 12 held both halves of the ruled reading (broken premise →
+re-express) in all three runs; recovery was routed via evidence-marshalling /
+NOI restructuring rather than the sidecar's A-mall-scarcity expression —
+**route variance accepted by operator ruling** (2026-06-13). The thesis
+excluded the scarcity angle and run 1 correctly surfaced that exclusion;
+whether adjudication should surface author-excluded adjacent expressions is a
+prompt-encoding question for the tuning backlog (logged as D4.7), not this
+gate. 13 named both DISCARD legs in all three runs.
+
+**Format drift is stochastic, not input-deterministic.** Identical inputs
+produced both prose and JSON across runs (uranium: prose, prose, JSON;
+Veridian: JSON, prose, JSON) — 3 prose / 5 fenced JSON / 1 bare JSON overall.
+Input hygiene therefore cannot eliminate drift, and the item-18 route-level
+parse-guards remain a hard prerequisite for any Fable migration.
+
+**Snapshot check.** GET /v1/models serves exactly one Fable ID:
+`claude-fable-5` (created 2026-06-07). No dated snapshot exists — nothing to
+pin; a model revision would arrive under the same alias.
+
+**A pass does NOT cover (migration-turn obligations):**
+1. generateObject/Zod request shape in app/api/adjudicate/route.ts, incl.
+   withoutTemperature-wrapper behavior for a Fable model object; item-18
+   parse-guards must ship first.
+2. Regression fragments 7–10 on Fable.
+3. The challenge path (buildChallengeContext) — never harness-tested on any model.
+4. **Unpinned-alias policy.** /v1/models serves no dated Fable snapshot, so a
+   model revision would arrive under the same string and silently re-void this
+   verification. The migration turn must define detection/handling — e.g. a
+   boundary-trio canary rerun, triggered by a created-timestamp change on the
+   alias or run before any consequential pipeline change.
+
+**Footnote — stale harness pricing.** `pricing.ts` carries opus at 15/75 vs
+Opus 4.7's actual 5/25; step-5 cost figures overstated Opus spend ~3×. Fable
+row added at the correct 10/50. Opus row left as-is this turn.
+
+**Code commit:** 174cccd (model arm + stop_reason capture + harness tsconfig +
+scratch prompt).
