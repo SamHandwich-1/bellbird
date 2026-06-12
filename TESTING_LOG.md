@@ -334,6 +334,20 @@ Per divergence: severity (HIGH / MEDIUM / LOW) + **direct edit** (apply to live 
 - **D4.2 — PROCEED: add asymmetric-standard framing** — "bar to proceed is higher than bar to question." *MEDIUM. A/B.*
 - **D4.3 — DISCARD: add high-bar framing** — "DISCARD threshold is high; preserves the 'if anything can be killed, nothing is' discipline." *MEDIUM. A/B.* Pairs thematically with D4.1 ("DISCARD is rare"); measure D4.3 A/B against the post-D4.1 baseline so the variants don't trip over each other.
 - **D4.4 — Reasoning: add audit-trail framing** — verdict and reasoning should be auditable months later from the reasoning alone. *LOW. Direct edit.*
+- **D4.5 — Skipped in namespace.** Informally referenced in the step-5 judging doc as a schema-conformance concern; reclassified at the time to item 18 (route-level parse-guard). Number deliberately not reused.
+- **D4.6 — Verdict-distribution / STRESS_TEST attractor** (surfaced 2026-06-08, resolved 2026-06-09). *HIGH. Direct rewrite.*
+
+  **The finding.** Step-5 A/B (12 calls: A/B/C × 4 theses) returned STRESS_TEST 12/12. Boundary-case rerun (uranium clean-PROCEED candidate + mall-REIT broken-premise candidate) isolated this as a STRESS_TEST attractor in baseline A, not a property of the inputs. Uranium-A: own reasoning conceded "neither point breaks the directional bet" yet returned STRESS_TEST. Mall-REIT-A: own reasoning conceded the contrarian's diagnosis was the consensus repricing already expressed in the 7% cap (broken-premise read) yet returned STRESS_TEST. PROCEED and DISCARD were structurally unreachable from honest inputs under A.
+
+  **The diagnostic that nailed it to PROMPT-level.** `phase-4-D.md` (single-variable change against A: rewritten verdict definitions + verdict-distribution discipline block). Uranium A→STRESS_TEST, D→**PROCEED**, with D's reasoning correctly applying the "does not break the core mechanism → PROCEED, full stop" test — quantified the supply-elasticity counter as non-breaking (8-12M expansions don't close a 30M gap; the contrarian's own concession about manufacturing/regulatory lead-time IS the thesis's pricing window) and concluded "the contrarian shifts the timing band but the load-bearing structure holds." Prompt-level fix demonstrated.
+
+  **The DISCARD-side resolution (adopted reading).** A broken premise with a live adjacent expression is STRESS_TEST (re-express), not DISCARD. DISCARD is reserved for a dead insight (no live expression anywhere) OR a broken mechanism with nothing recoverable. Under this reading, DISCARD is structurally rare by design at the ideation layer. Mall-REIT D→STRESS_TEST is brief-faithful — D's reasoning identified the A-mall-scarcity rescue expression that exists in reality (even though the thesis author excluded it from the test case) and routed to STRESS_TEST/re-express. This is the high-bar discipline working, not the attractor failing. This reading must be encoded in **both** the Phase 4 prompt and `brief.md` at promotion.
+
+  **Path B rejected.** Synthetic dead-insight DISCARD test was considered but rejected: cannot locate the re-express/kill line on realistic theses without engineering the input; DISCARD reachability is confirmed by real-world use over time, not synthetic harness inputs. (Superseded 2026-06-10 — a synthetic dead-insight fragment (13, Veridian) was built and used as the DISCARD gate for the promotion turn; see Step 5 CLOSED.)
+
+  **Implication for D4.2 / D4.3.** Both A/B variants returned 12/12 STRESS_TEST identical to A in step 5 — not because they failed, but because they were never tested against their target conditions (D4.2 needs a PROCEED candidate to potentially downgrade; D4.3 needs a DISCARD candidate to potentially hold). Currently parked. Re-runnable against the post-D4.6 baseline if the target conditions become testable; not promoting B or C now.
+
+  **Fix (promotion queue).** See step-5 closure sub-section below for the queued promotion turn.
 
 **Step 6 — Phase 1 (high divergence)**
 - **D1.1 — Add reference-class / base-rate prompting** — when the user reaches for a story, reach for the reference class: base rate, comparable cohort, has this worked before / when. *HIGH. A/B.* Antidote to narrative framing; core to the second-level-thinking approach. The meaty one — most likely to surface multiple variant directions. D1.3 (mechanism-vs-narrative contrast) folds into this A/B; same variant set, both speak to narrative-resistance.
@@ -343,6 +357,7 @@ Per divergence: severity (HIGH / MEDIUM / LOW) + **direct edit** (apply to live 
 **Step 7 — Phase 3 (low divergence)**
 - **D3.1 — Add "moralizing" to the disqualifier list** alongside strawman and surface details. *LOW. Direct edit.*
 - **D3.2 — Name severity as the disagreement matrix's calibration principle** (not just a per-row field — the matrix should be ordered/weighted by it). *LOW. Direct edit.*
+- ~~**D3.3 — Schema conformance**~~ — reclassified out of prompt-tuning on 2026-06-08; promoted to item 18 below as a route-level code-hardening fix.
 
 **Step 8 — Phase 2 (lowest divergence — no brief-divergence work)**
 - **D2.1 — `.min(20)` prompt-level reminder: skip.** Schema enforces; substance ("never empty") already in prompt.
@@ -352,6 +367,32 @@ Per divergence: severity (HIGH / MEDIUM / LOW) + **direct edit** (apply to live 
 **Step 4 implication.** A/B items: D4.2, D4.3, D1.1 (with D1.3 folded). Tuning infrastructure (scratch prompts under `scripts/prompt-harness/prompts/`, runner recursion fix, library-snapshot bake for scenario 4) only needs scratch copies for **Phase 4 and Phase 1**. Phase 3 and Phase 2 are out of scope for this round of step 4 — Phase 3 ships as direct edits only, Phase 2 has no brief-divergence items.
 
 **Direct-edit batch summary.** Five direct edits across three phases: D4.1 + D4.4 (Phase 4), D1.2 (Phase 1), D3.1 + D3.2 (Phase 3). Can land as a single prompts-only commit ahead of harness infrastructure work, or interleaved per phase with each phase's A/B work — sequencing TBD when steps 5–7 begin.
+
+### Brief reading clarification — Phase 4 DISCARD threshold (2026-06-08)
+
+Surfaced during step-5 boundary-case planning. Two readings of the brief's Phase 4 DISCARD second clause ("the picks-and-shovels insight is already priced") were possible:
+
+1. **Literal reading:** any captured picks-and-shovels insight lands DISCARD regardless of how well-formed the thesis is.
+2. **High-bar reading:** "already priced" → DISCARD ONLY when the insight itself is dead and no expression recovers edge. Expensive/captured but the insight has runway → STRESS_TEST. The "if anything can be killed, nothing is" discipline dominates.
+
+**Adopted: reading (2) — the high-bar reading.** Consequence for step 5: a "long Vertiv standalone, captured consensus position" thesis lands STRESS_TEST not DISCARD, because the cooling-buildout insight still has runway through cycle and expression. The clean-DISCARD test pathway is a genuinely *dead* insight or a *broken* (not dented) central premise.
+
+**Resolution (2026-06-09).** The reading held through step-5 completion and was sharpened by the Phase 4 boundary-case D run: a broken premise with a *live adjacent expression* is STRESS_TEST (re-express), not DISCARD. DISCARD is reserved for a dead insight (no live expression anywhere) OR a broken mechanism with nothing recoverable. Mall-REIT D→STRESS_TEST is brief-faithful application of this reading — D's reasoning identified the A-mall-scarcity rescue expression that exists in reality (even though the thesis author excluded it from the test case) and routed to STRESS_TEST/re-express. The `brief.md` edit lands as part of the queued promotion turn (see step-5 closure below), code-before-docs.
+
+### Step 5 closure (2026-06-09)
+
+**Outcome.** The original step-5 A/B (D4.2 asymmetric standard, D4.3 high-bar DISCARD) returned 12/12 STRESS_TEST identical to baseline A — diagnosed via boundary-case rerun as a deeper PROMPT-level attractor in A (logged as D4.6). The boundary-case Phase D diagnostic (`phase-4-D.md`) confirmed the fix is prompt-level and contained. D4.2 and D4.3 were never tested against their target conditions and are parked, not promoted.
+
+**Promotion queue (next turn, after `/clear`).** (executed 2026-06-10 — see Step 5 CLOSED below)
+
+1. **Promote D's verdict architecture to live `lib/ai/prompts/phase-4-adjudication.ts`.** Specifically: D's PROCEED definition ("does not break the core mechanism — full stop; shifts/narrows-but-not-breaking is still PROCEED"), the verdict-distribution discipline block ("STRESS_TEST is not the default; a landed-but-non-breaking contrarian argument is grounds for PROCEED, not for iteration"), and the adopted DISCARD wording (broken premise with no recoverable expression OR dead/already-priced insight with no expression that recovers edge). Single-commit Phase 4 prompt rewrite.
+2. **Update `brief.md`** Phase 4 section to match — encode the high-bar DISCARD reading explicitly (broken-with-nothing-recoverable / dead-insight) and the STRESS_TEST-not-as-default discipline. Code-before-docs ordering.
+3. **D4.2 and D4.3 parked.** Re-runnable against the post-D4.6 baseline if/when their target conditions (a real PROCEED candidate that B might downgrade; a real DISCARD candidate that C might hold) become testable in real-world use.
+4. **Item 18 (route-level schema parse-guard) ships independently** — its own commit, not bundled with the Phase 4 prompt promotion.
+
+**Cost.** Step 5 total spend: ~$1.00 across 22 API calls — Phase 3 input gen (4 Grok), Phase 4 A/B (12 Opus), boundary Phase A (2 Grok + 2 Opus), boundary Phase D (2 Opus). Within the initial $0.40–$2.00 envelope.
+
+**Scratch files retained.** `scripts/prompt-harness/prompts/phase-4-{A,B,C,D}.md` and `fragments/{7,8,9,10,11,12}-phase-4-*/` stay on disk as the audit trail for the step-5 finding. Not cleaned up — the path from "A defaults to STRESS_TEST" to "D demonstrates prompt-level fix" is in those files.
 
 ### Step 5 CLOSED (2026-06-10)
 
@@ -374,6 +415,28 @@ These were flagged in May's Turn 5 verification but never fixed. They affect alr
 **Trade delete quirk in Portfolio.** Current price for a ticker survives when the last trade for that ticker is deleted. Should clear.
 
 **Share count column missing on Portfolio holdings rows.** Display omission.
+
+---
+
+## 18. Phase 3 / Phase 4 route schema parse-guards
+
+**Status:** ✅ Approved (code-hardening, not prompt-tuning)
+**Build size:** Small. ~30 lines across two routes.
+
+Surfaced during step-5 harness run (2026-06-08). Two related schema-conformance failures observed in model outputs against the live Zod schemas:
+
+- **Phase 3 (Grok).** The gaming-dispersion `disagreement_matrix` came back as a YAML/markdown list rather than the JSON array the Zod schema expects. Three of four theses returned JSON; only the thinnest input drifted. In the live `app/api/stress-test/route.ts` route this would fail Zod parse.
+- **Phase 4 (Opus).** The gaming-B adjudication came back as plain prose ("Verdict: STRESS_TEST\n\nThe thesis rests on…") rather than the `{ verdict, reasoning }` JSON. Same input thinness, same drift mode. Would fail Zod parse in `app/api/adjudicate/route.ts`. **Third and fourth occurrences (2026-06-08/09):** the boundary-case uranium-A and uranium-D adjudications both returned plain prose ("verdict: STRESS_TEST\n\nreasoning: …" and "verdict: PROCEED\n\nreasoning: …"). Drift pattern is **input-driven, not prompt-driven** — repeats on the structurally shortest inputs across both A and D variants on the same scenario. Four occurrences across two phases on three different inputs (gaming Phase 3, gaming-B Phase 4, uranium A, uranium D) confirms the pattern is not noise and not prompt-fixable. Route-level parse-guard is the right fix.
+
+**Fix is at the route, not the prompt.** Format drift on thin inputs is a model behavior that won't be fully eliminated by prompt tightening — the right pattern is route-level reliability:
+
+1. On first response, attempt `schema.safeParse(...)`. If it fails, retry once with a system-message appendix naming the schema shape and that the prior response did not conform.
+2. On second failure, surface the error to the caller — don't silently fall back.
+3. Apply symmetrically in both `app/api/stress-test/route.ts` and `app/api/adjudicate/route.ts`. Retry budget capped at 1 to bound cost and latency.
+
+Originally captured as D3.3 in the step-7 Phase 3 prompt-tuning backlog (now reclassified above) and surfaced informally as a Phase 4 schema concern in the step-5 judging doc. Both fold here. Independent of any prompt variant choice.
+
+**Build slot:** small standalone code-hardening commit. Ship before the next live production thesis run where input thinness might be plausible.
 
 ---
 
