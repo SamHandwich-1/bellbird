@@ -1,13 +1,14 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-export type Model = 'opus' | 'sonnet' | 'grok';
-export const MODELS: readonly Model[] = ['opus', 'sonnet', 'grok'] as const;
+export type Model = 'opus' | 'sonnet' | 'grok' | 'fable';
+export const MODELS: readonly Model[] = ['opus', 'sonnet', 'grok', 'fable'] as const;
 
 export const MODEL_IDS: Record<Model, string> = {
   opus: 'claude-opus-4-7',
   sonnet: 'claude-sonnet-4-6',
   grok: 'grok-4',
+  fable: 'claude-fable-5',
 };
 
 function requireEnv(key: string): string {
@@ -44,6 +45,9 @@ export type CallResult = {
   input_tokens: number;
   output_tokens: number;
   latency_ms: number;
+  // 'max_tokens' (Anthropic) / 'length' (Grok) marks a truncated run —
+  // infra-fail, not a verdict. null when the provider omits it.
+  stop_reason: string | null;
 };
 
 export type CallOpts = {
@@ -59,10 +63,11 @@ export async function callModel(
 ): Promise<CallResult> {
   const t0 = Date.now();
 
-  if (model === 'opus' || model === 'sonnet') {
-    // Opus 4.7 + Sonnet 4.6 deprecated `temperature`; Anthropic rejects requests
-    // that include it. The CLI flag still parses for parity with Grok runs but
-    // is intentionally NOT forwarded here.
+  if (model === 'opus' || model === 'sonnet' || model === 'fable') {
+    // Opus 4.7 + Sonnet 4.6 + Fable 5 deprecated `temperature`; Anthropic rejects
+    // requests that include it. The CLI flag still parses for parity with Grok
+    // runs but is intentionally NOT forwarded here. No `thinking` param either —
+    // Fable 5 rejects an explicit disabled; omission is the supported shape.
     const res = await anthropicClient().messages.create({
       model: MODEL_IDS[model],
       max_tokens: opts.maxTokens,
@@ -78,6 +83,7 @@ export async function callModel(
       input_tokens: res.usage.input_tokens,
       output_tokens: res.usage.output_tokens,
       latency_ms: Date.now() - t0,
+      stop_reason: res.stop_reason ?? null,
     };
   }
 
@@ -97,5 +103,6 @@ export async function callModel(
     input_tokens: res.usage?.prompt_tokens ?? 0,
     output_tokens: res.usage?.completion_tokens ?? 0,
     latency_ms: Date.now() - t0,
+    stop_reason: res.choices[0]?.finish_reason ?? null,
   };
 }

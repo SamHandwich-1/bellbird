@@ -6,6 +6,7 @@ export const PRICING: Record<Model, { input: number; output: number }> = {
   opus: { input: 15.0, output: 75.0 },
   sonnet: { input: 3.0, output: 15.0 },
   grok: { input: 5.0, output: 15.0 },
+  fable: { input: 10.0, output: 50.0 },
 };
 
 export function costUsd(

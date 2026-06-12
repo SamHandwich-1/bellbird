@@ -16,11 +16,11 @@ function usage(): never {
       '',
       '  Single shot:',
       '    npm run prompt-harness -- \\',
-      '      --prompt <file> --fragment <file> --model <opus|sonnet|grok>',
+      '      --prompt <file> --fragment <file> --model <opus|sonnet|grok|fable>',
       '',
       '  Matrix:',
       '    npm run prompt-harness -- \\',
-      '      --prompt-dir <dir> --fragment-dir <dir> --model <opus|sonnet|grok>',
+      '      --prompt-dir <dir> --fragment-dir <dir> --model <opus|sonnet|grok|fable>',
       '',
       '  Flags:',
       `    --out-dir <dir>          default: ${DEFAULT_OUT_DIR}`,
@@ -179,7 +179,7 @@ async function main(): Promise<void> {
       totalIn += result.input_tokens;
       totalOut += result.output_tokens;
       console.log(
-        `ok (${result.input_tokens}+${result.output_tokens} tokens, $${cost.toFixed(4)}, ${result.latency_ms}ms) → ${path}`,
+        `ok (${result.input_tokens}+${result.output_tokens} tokens, $${cost.toFixed(4)}, ${result.latency_ms}ms, stop=${result.stop_reason ?? 'null'}) → ${path}`,
       );
     } catch (e) {
       const msg = e instanceof Error ? e.message : String(e);
