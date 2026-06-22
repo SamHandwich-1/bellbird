@@ -684,10 +684,9 @@ event and the persisted `guard.finishReasons` carry finishReason, so a
 truncation (`length`) is never miscounted as drift (`tool-calls`). The
 production rows show `tool-calls`, correctly classified as drift.
 
-**Latency.** maxDuration raised 60→120 on the three routes — **120 set,
-validated at next Vercel build** (no local step exercises it; `next build` does
-not assert plan-permitted durations). Record the 60-fallback only if the build
-rejects 120. Envelope: measured single-call worsts grok-4 12.8s, opus 11.0s,
+**Latency.** maxDuration raised 60→120 on the three routes — **120 accepted on
+Pro (cap 800s fluid, well above 120); no fallback needed.** Envelope: measured
+single-call worsts grok-4 12.8s, opus 11.0s,
 fable 26.9s (×2 ≈ 54s before SDK-internal API-error retries and Supabase
 writes); Phase 2 never timed independently (largest schema). The SDK's own
 `maxRetries` (default 2) multiplies worst-case HTTP calls per parse attempt —
