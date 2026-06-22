@@ -618,3 +618,97 @@ row added at the correct 10/50. Opus row left as-is this turn.
 
 **Code commit:** 174cccd (model arm + stop_reason capture + harness tsconfig +
 scratch prompt).
+
+---
+
+## 20. Item-18 parse-guards — shipped (2026-06-22)
+
+**Status:** ✅ Shipped. Code commit 151017b. Verified in production (see below).
+**Scope:** Route-level reliability only. No prompt edits, no model swaps, no
+migration work, harness untouched.
+
+Implements item 18. `lib/ai/parse-guard.ts` wraps `generateObject` with a free
+local JSON-extraction repair followed by one paid retry carrying a schema
+appendix; on exhaustion the caller gets a `ParseGuardError` and nothing is
+stored (route returns 502, Bellbird-voice body). One shared helper, three thin
+call sites.
+
+**Verified in production.** The 2026-06-21 live UI run (conversation
+1707bde0…, thesis neutron-re-rate-2026, now in the Library) exercised the guard
+on the first real pipeline:
+
+| Phase | guard |
+|---|---|
+| 2 structure (opus) | `{attempts:2, repaired:false, finishReasons:["tool-calls","tool-calls"]}` |
+| 3 stress-test (grok) | `{attempts:1, repaired:false, finishReasons:["tool-calls"]}` |
+| 4 adjudicate (opus) | `{attempts:1, repaired:false, finishReasons:["tool-calls"]}` |
+
+Phase 2 returned `attempts:2`: the first structuring call produced tool
+arguments that failed the Zod schema, and the **paid retry recovered it** — the
+thesis still landed. `finishReasons:["tool-calls","tool-calls"]` (not `length`)
+confirms this was genuine schema drift, not truncation. `repaired:false`
+confirms local extraction repair declined, exactly as predicted under forced
+tool-call mode. This is the design thesis "the paid retry is the guard" holding
+in production rather than asserted, and item 18's drift mode caught on the first
+live run.
+
+**Three-route coverage — recorded delta from item 18's wording.** Item 18 names
+two routes (stress-test, adjudicate) — the routes where drift had been
+*observed*. Item 19 established drift is stochastic per-call, making exposure a
+property of the `generateObject` mechanism rather than observed history, so
+coverage is symmetric across all three structured-output routes including
+Phase 2. `app/api/structure/route.ts` pins `opus` = `claude-opus-4-7`
+(route.ts:2,39 via lib/ai/anthropic.ts OPUS_MODEL_ID). Item 18 not amended.
+(The Turn-B follow-up line "Phase 2 currently runs Sonnet" is **stale** —
+structure has pinned opus since Turn D; superseded here, not edited.)
+
+**Forced-tool-mode finding.** All three routes call `generateObject` (ai@4.3.19)
+in forced tool-call mode for both providers (anthropic
+`defaultObjectGenerationMode='tool'`; grok-4 absent from the xai
+`supportsStructuredOutputs` allow-list). The harness (clients.ts) hits the raw
+messages API with no tool forcing, so harness drift presents as prose; live
+drift presents as schema-nonconforming or truncated tool *arguments*. The
+harness drift shape is therefore not the live drift shape — confirmed by the
+production run, where the drift was a failed tool-args parse, not prose.
+
+**Local repair role — expected live hit-rate ≈ 0.** Under tool mode: truncated
+args have no balanced JSON span → extraction returns null → repair declines;
+valid-JSON-of-wrong-shape is byte-identical to its own extraction → declines by
+design; tool-not-called never reaches the hook. The production `repaired:false`
+on the drift event is consistent. Local repair's real consumers are the unit
+fixtures and the migration turn's raw-text request shape. The paid retry is the
+guard.
+
+**finishReason taxonomy carried over from item 19.** Every `[parse-guard]` log
+event and the persisted `guard.finishReasons` carry finishReason, so a
+truncation (`length`) is never miscounted as drift (`tool-calls`). The
+production rows show `tool-calls`, correctly classified as drift.
+
+**Latency.** maxDuration raised 60→120 on the three routes — **120 set,
+validated at next Vercel build** (no local step exercises it; `next build` does
+not assert plan-permitted durations). Record the 60-fallback only if the build
+rejects 120. Envelope: measured single-call worsts grok-4 12.8s, opus 11.0s,
+fable 26.9s (×2 ≈ 54s before SDK-internal API-error retries and Supabase
+writes); Phase 2 never timed independently (largest schema). The SDK's own
+`maxRetries` (default 2) multiplies worst-case HTTP calls per parse attempt —
+the ≤2× bound is per parse-retry, not per HTTP call.
+
+**Residual untested surfaces (carried forward).**
+1. **OPEN — repair hook fires on the live tool path.** Established by
+   dist-reading only (ai/dist/index.js:3046→3067→3103), never executed. The
+   2026-06-21 run confirmed the *retry* path, not hook invocation:
+   `repaired:false` does not distinguish fired-and-declined from never-fired.
+   Still open.
+2. Appendix efficacy on a real provider retry — unknown; the production retry
+   recovered but with N=1 and no A/B against a plain re-roll.
+3. SDK-internal `maxRetries` API-error retry multiplying worst-case HTTP calls.
+4. grok-4 honoring forced function choice on the retry path.
+
+**Fixtures.** Nine real Fable Phase-4 gate outputs (item 19 per-run table)
+committed under scripts/prompt-harness/fixtures/format-drift/ — 3 prose / 5
+fenced / 1 bare — bodies byte-faithful (no in-band headers), provenance in
+sidecar manifest.json (file → source timestamp, class, expected). Unit test
+lib/ai/parse-guard.test.ts (16 cases, node:assert via tsx) drives extraction
+off the manifest plus retry-orchestration and exhaustion via an injected fake.
+
+**Code commit:** 151017b (helper + test + three routes + fixtures + npm script).
