@@ -1,0 +1,6 @@
+```json
+{
+  "verdict": "DISCARD",
+  "reasoning": "The thesis rests entirely on a single binary event — the Phase 3 readout of VRD-101 — and the contrarian argument lands on the fact that this event has already resolved against the thesis (p=0.31 miss on the primary endpoint). This is not contrarian pressure on a probability estimate; it is the elimination of the event the trade was structured around. The mechanism is invalidated in the indication by a second negative class readout, there is no pipeline or adjacent expression to recover the bet, and the residual cash-shell value sits below entry with dilution or wind-down ahead. The structural premise is broken with no recoverable expression of the insight. Do not commit."
+}
+```

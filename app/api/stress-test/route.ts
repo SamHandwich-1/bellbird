@@ -1,12 +1,14 @@
-import { generateObject } from 'ai';
 import { grok } from '@/lib/ai/xai';
+import { generateObjectGuarded, ParseGuardError } from '@/lib/ai/parse-guard';
 import { PHASE_3_SYSTEM_PROMPT } from '@/lib/ai/prompts/phase-3-stress-test';
 import { stressTestSchema } from '@/lib/ai/schemas';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 120s headroom for one parse-guard retry. Validated only by the Vercel build
+// after push — falls back to 60 if the build rejects/clamps 120.
+export const maxDuration = 120;
 
 type Phase2MessageMeta = {
   input_tokens?: number;
@@ -47,11 +49,12 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await generateObject({
+    const { object, usage, guard } = await generateObjectGuarded({
       model: grok,
       system: PHASE_3_SYSTEM_PROMPT,
       schema: stressTestSchema,
       prompt: `Structured thesis to pressure-test:\n\n${JSON.stringify(draft, null, 2)}\n\nProduce the contrarian argument and disagreement matrix.`,
+      phase: 3,
     });
 
     const admin = createAdminClient();
@@ -60,8 +63,8 @@ export async function POST(req: Request) {
       .insert({
         conversation_id: conversationId,
         thesis_snapshot: draft as Record<string, unknown>,
-        contrarian_argument: result.object.contrarian_argument,
-        disagreement_matrix: result.object.disagreement_matrix,
+        contrarian_argument: object.contrarian_argument,
+        disagreement_matrix: object.disagreement_matrix,
       })
       .select('*')
       .single();
@@ -70,13 +73,14 @@ export async function POST(req: Request) {
     await admin.from('messages').insert({
       conversation_id: conversationId,
       role: 'assistant',
-      content: result.object.contrarian_argument,
+      content: object.contrarian_argument,
       model: 'grok-4',
       phase: 3,
       metadata: {
-        input_tokens: result.usage.promptTokens ?? 0,
-        output_tokens: result.usage.completionTokens ?? 0,
+        input_tokens: usage.promptTokens ?? 0,
+        output_tokens: usage.completionTokens ?? 0,
         stress_test_id: stressTestRow.id,
+        guard,
       },
     });
     await admin
@@ -86,6 +90,17 @@ export async function POST(req: Request) {
 
     return Response.json({ ok: true, stressTest: stressTestRow });
   } catch (e) {
+    if (e instanceof ParseGuardError) {
+      console.error('[api/stress-test] parse-guard exhausted:', e);
+      return Response.json(
+        {
+          error:
+            'The stress test did not return a usable structure after one retry. Nothing was saved — run it again.',
+          code: e.code,
+        },
+        { status: 502 },
+      );
+    }
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[api/stress-test] generateObject error:', e);
     return Response.json({ error: msg }, { status: 500 });

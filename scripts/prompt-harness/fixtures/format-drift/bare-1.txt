@@ -1,0 +1,4 @@
+{
+  "verdict": "DISCARD",
+  "reasoning": "The thesis rests entirely on an unresolved binary — a 4-month Phase 3 readout where the market underprices success. The contrarian argument lands on the fatal fact that the binary has already resolved: VRD-101 missed its primary endpoint at p=0.31, and a second negative readout in the same mechanistic class invalidates the mechanism in this indication rather than merely delaying it. The thesis itself stipulated that the entire equity value is the risk-adjusted NPV of this one asset, so there is no pipeline, no peer expression, and no second-order angle to recover the bet. With burn exceeding runway and residual cash-shell value below entry, even the salvage case is underwater. The structural premise is broken with no recoverable expression; this does not belong in the library."
+}

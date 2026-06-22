@@ -1,12 +1,14 @@
-import { generateObject } from 'ai';
 import { opus } from '@/lib/ai/anthropic';
+import { generateObjectGuarded, ParseGuardError } from '@/lib/ai/parse-guard';
 import { PHASE_2_SYSTEM_PROMPT } from '@/lib/ai/prompts/phase-2-structuring';
 import { structuredThesisSchema } from '@/lib/ai/schemas';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 120s headroom for one parse-guard retry. Validated only by the Vercel build
+// after push — falls back to 60 if the build rejects/clamps 120.
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -35,24 +37,26 @@ export async function POST(req: Request) {
   }
 
   try {
-    const result = await generateObject({
+    const { object, usage, guard } = await generateObjectGuarded({
       model: opus,
       system: PHASE_2_SYSTEM_PROMPT,
       schema: structuredThesisSchema,
       prompt: `Conversation transcript:\n\n${transcript}\n\nProduce the structured thesis record.`,
+      phase: 2,
     });
 
     const admin = createAdminClient();
     await admin.from('messages').insert({
       conversation_id: conversationId,
       role: 'assistant',
-      content: JSON.stringify(result.object),
+      content: JSON.stringify(object),
       model: 'opus-4.7',
       phase: 2,
       metadata: {
-        input_tokens: result.usage.promptTokens ?? 0,
-        output_tokens: result.usage.completionTokens ?? 0,
-        structured: result.object,
+        input_tokens: usage.promptTokens ?? 0,
+        output_tokens: usage.completionTokens ?? 0,
+        structured: object,
+        guard,
       },
     });
     await admin
@@ -60,8 +64,19 @@ export async function POST(req: Request) {
       .update({ status: 'phase_2', updated_at: new Date().toISOString() })
       .eq('id', conversationId);
 
-    return Response.json({ ok: true, draft: result.object });
+    return Response.json({ ok: true, draft: object });
   } catch (e) {
+    if (e instanceof ParseGuardError) {
+      console.error('[api/structure] parse-guard exhausted:', e);
+      return Response.json(
+        {
+          error:
+            'Structuring did not return a usable record after one retry. Nothing was saved — run it again.',
+          code: e.code,
+        },
+        { status: 502 },
+      );
+    }
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[api/structure] generateObject error:', e);
     return Response.json({ error: msg }, { status: 500 });

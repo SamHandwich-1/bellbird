@@ -1,5 +1,5 @@
-import { generateObject } from 'ai';
 import { opus } from '@/lib/ai/anthropic';
+import { generateObjectGuarded, ParseGuardError } from '@/lib/ai/parse-guard';
 import {
   PHASE_4_SYSTEM_PROMPT,
   buildChallengeContext,
@@ -9,7 +9,10 @@ import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 
 export const runtime = 'nodejs';
-export const maxDuration = 60;
+// 120s headroom for one parse-guard retry on top of a slow adjudication. The
+// value is validated only by the Vercel build after push — nothing local
+// exercises it. If the build rejects/clamps 120, fall back to 60.
+export const maxDuration = 120;
 
 export async function POST(req: Request) {
   const supabase = await createClient();
@@ -66,11 +69,12 @@ export async function POST(req: Request) {
   const prompt = promptParts.join('\n\n');
 
   try {
-    const result = await generateObject({
+    const { object, usage, guard } = await generateObjectGuarded({
       model: opus,
       system: PHASE_4_SYSTEM_PROMPT,
       schema: adjudicationSchema,
       prompt,
+      phase: 4,
     });
 
     const admin = createAdminClient();
@@ -79,11 +83,11 @@ export async function POST(req: Request) {
       .insert({
         conversation_id: conversationId,
         stress_test_id: stressTest.id,
-        verdict: result.object.verdict,
-        reasoning: result.object.reasoning,
+        verdict: object.verdict,
+        reasoning: object.reasoning,
         user_challenge: userChallenge ?? null,
         user_override: Boolean(userChallenge),
-        final_decision: result.object.verdict,
+        final_decision: object.verdict,
       })
       .select('*')
       .single();
@@ -92,14 +96,15 @@ export async function POST(req: Request) {
     await admin.from('messages').insert({
       conversation_id: conversationId,
       role: 'assistant',
-      content: result.object.reasoning,
+      content: object.reasoning,
       model: 'opus-4.7',
       phase: 4,
       metadata: {
-        input_tokens: result.usage.promptTokens ?? 0,
-        output_tokens: result.usage.completionTokens ?? 0,
-        verdict: result.object.verdict,
+        input_tokens: usage.promptTokens ?? 0,
+        output_tokens: usage.completionTokens ?? 0,
+        verdict: object.verdict,
         verdict_id: verdictRow.id,
+        guard,
       },
     });
     await admin
@@ -109,6 +114,17 @@ export async function POST(req: Request) {
 
     return Response.json({ ok: true, verdict: verdictRow });
   } catch (e) {
+    if (e instanceof ParseGuardError) {
+      console.error('[api/adjudicate] parse-guard exhausted:', e);
+      return Response.json(
+        {
+          error:
+            'Adjudication did not return a usable verdict after one retry. Nothing was saved — run it again.',
+          code: e.code,
+        },
+        { status: 502 },
+      );
+    }
     const msg = e instanceof Error ? e.message : String(e);
     console.error('[api/adjudicate] generateObject error:', e);
     return Response.json({ error: msg }, { status: 500 });

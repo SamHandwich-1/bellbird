@@ -1,0 +1,56 @@
+[
+  {
+    "file": "prose-1.txt",
+    "source": "20260612133552-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "prose",
+    "expect": "null"
+  },
+  {
+    "file": "prose-2.txt",
+    "source": "20260612133611-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "prose",
+    "expect": "null"
+  },
+  {
+    "file": "prose-3.txt",
+    "source": "20260612133831-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "prose",
+    "expect": "null"
+  },
+  {
+    "file": "fenced-1.txt",
+    "source": "20260612133626-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "fenced",
+    "expect": "parses"
+  },
+  {
+    "file": "fenced-2.txt",
+    "source": "20260612133706-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "fenced",
+    "expect": "parses"
+  },
+  {
+    "file": "fenced-3.txt",
+    "source": "20260612133733-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "fenced",
+    "expect": "parses"
+  },
+  {
+    "file": "fenced-4.txt",
+    "source": "20260612133759-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "fenced",
+    "expect": "parses"
+  },
+  {
+    "file": "fenced-5.txt",
+    "source": "20260612133822-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "fenced",
+    "expect": "parses"
+  },
+  {
+    "file": "bare-1.txt",
+    "source": "20260612133841-fable-eval-fable-phase-4-phase-4-input.md",
+    "class": "bare",
+    "expect": "parses"
+  }
+]

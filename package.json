@@ -8,7 +8,8 @@
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit",
-    "prompt-harness": "tsx --env-file=.env.local scripts/prompt-harness/run.ts"
+    "prompt-harness": "tsx --env-file=.env.local scripts/prompt-harness/run.ts",
+    "test:parse-guard": "tsx lib/ai/parse-guard.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.6",
