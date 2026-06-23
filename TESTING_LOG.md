@@ -711,3 +711,94 @@ lib/ai/parse-guard.test.ts (16 cases, node:assert via tsx) drives extraction
 off the manifest plus retry-orchestration and exhaustion via an injected fake.
 
 **Code commit:** 151017b (helper + test + three routes + fixtures + npm script).
+
+---
+
+## 21. Model-config centralisation — wire model ids (2026-06-23)
+
+**Status:** ✅ Shipped. Code commit 239ae35. Behaviour-preserving refactor —
+no model swap, no gate triggered.
+**Scope:** Wire model-id strings only. No route changes, no prompt edits, no
+DB-label changes, harness untouched.
+
+Collapses the three production wire model-id strings into one registry,
+`lib/ai/models.ts` (`MODEL_IDS = { opus: 'claude-opus-4-7', sonnet:
+'claude-sonnet-4-6', grok: 'grok-4' }`, pure data, zero imports).
+`lib/ai/anthropic.ts` and `lib/ai/xai.ts` now source `OPUS_MODEL_ID` /
+`SONNET_MODEL_ID` / `GROK_MODEL_ID` from it; the literals previously lived
+inline in those two files. Five files touched: the two new files
+(`models.ts`, `models.test.ts`), `anthropic.ts`, `xai.ts`, `package.json`
+(`test:models` script). Zero route or prompt bytes changed.
+
+**Behaviour-preservation — provable by construction, not asserted.** Only the
+*source* of three literals moved (inline literal → `MODEL_IDS.x`). No route or
+prompt byte changed, so every emitted `messages.model` value and every prompt
+sent on the wire is byte-identical to before. `lib/ai/models.test.ts`
+(9 cases, node:assert via tsx, mirrors the parse-guard test idiom) closes the
+that-the-id-still-resolves question at both layers: the `MODEL_IDS` constants
+are byte-equal to the historical literals `claude-opus-4-7` /
+`claude-sonnet-4-6` / `grok-4`, and the **built `opus`/`sonnet`/`grok` wrapper
+instances carry those exact ids on `.modelId`** — i.e. routing the registry
+through `withoutTemperature()` and the providers did not change the model that
+resolves on the wire. The instance assertions are load-bearing; the
+constant-only check is near-tautological.
+
+**Verification.**
+
+| Check | Result |
+|---|---|
+| `npm run test:models` | 9/9 pass (incl. 3 instance-resolution assertions) |
+| `npm run typecheck` (`tsc --noEmit`) | clean |
+| `npm run build` | succeeded, all 15 routes / 4 API routes |
+| `npm run dev` | Ready in 2.2s, no errors (:3007; :3002 was occupied, untouched) |
+| `git status` | routes / prompts / harness absent → untouched |
+
+**Catalogue — every model-id reader, with disposition.**
+- *Wire-id literals (changed source, same value):* `anthropic.ts:9-10`,
+  `xai.ts:7` → now `MODEL_IDS`.
+- *DB-label writers (untouched):* `chat/route.ts:156`, `structure:53`,
+  `stress-test:77`, `adjudicate:100` — emit `'opus-4.7'` / `'grok-4'` verbatim.
+- *DB-label consumers (untouched):* `pricing.ts:5-7` (`MODEL_PRICING` keys,
+  `ModelKey = keyof …`), `develop-queries.ts:84-91` (init keys + the
+  `row.model … model in totals` read-back join).
+- *Third reader — `parse-guard.ts:115`:* `params.model.modelId` feeds the
+  `[parse-guard]` console telemetry label (none of the three routes pass
+  `modelLabel`, so the wire id is logged). Console-only, **not persisted**,
+  derives from the unchanged `.modelId` → behaviour-neutral. Catalogued here
+  for completeness; no action.
+
+**Two namespaces kept physically separate.** The DB telemetry label
+(`'opus-4.7'`, persisted in `messages.model`) is a different keyspace from the
+wire id (`'claude-opus-4-7'`), owned by `pricing.ts` / `develop-queries.ts`.
+It was deliberately left out of `models.ts`: it is not part of the wire 4.7/4.8
+drift, so centralising it would reduce no drift while arming a footgun — a
+future lockstep dbLabel bump without adding the matching pricing/queries key
+would silently break cost attribution (`estimateCostUsd` indexing `undefined`;
+the `model in totals` join dropping the row). Provider-ids-only also keeps
+behaviour-preservation true by construction (routes untouched) and removes any
+route-emit mis-index risk.
+
+**`PHASE_MODELS` deliberately deferred.** A phase→model map has no runtime
+consumer while the routes are untouched; by the same "no present consumer ⇒
+don't pre-build" rule that excluded a `provider` field, the phase→model
+indirection (and its `PhaseModel` interface / `satisfies Record` typing) defers
+to the Level-3 UI-selector turn, where a settings page reads model-by-phase.
+
+**Harness map left independent — by design, not drift.**
+`scripts/prompt-harness/clients.ts` keeps its own `MODEL_IDS` (incl. `sonnet`,
+`fable`). No route imports from `scripts/`; `tsconfig.json:22` excludes
+`scripts/**` from typecheck/build entirely. The independence is required for
+the next-turn boundary gate: a candidate model must run on the harness while
+production still runs the incumbent, so the two maps must be able to diverge.
+
+**Phase-4 "Opus 4.8" prose left untouched — path-independent reason.** Leaving
+the `phase-4-adjudication.ts:5` self-label is a **zero-byte change to the
+Phase-4 system prompt**, so Phase-4 output is identical to the already-live
+behaviour — behaviour-neutral by definition. This is the sole load-bearing
+reason. It is explicitly *not* justified by "a future Opus 4.8 bump makes the
+label true": item 19 (561-565) documents that the Fable-migration path's
+verified scratch was label-*free*, so the two forward paths disagree on the
+label's eventual fate. Editing the prose in either direction would be a
+Phase-4 prompt change that voids verification — out of scope this turn.
+
+**Code commit:** 239ae35 (registry + test + anthropic/xai repoint + npm script).
