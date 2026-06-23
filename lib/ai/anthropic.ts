@@ -1,13 +1,14 @@
 import { createAnthropic } from '@ai-sdk/anthropic';
 import type { LanguageModelV1 } from '@ai-sdk/provider';
+import { MODEL_IDS } from './models';
 
 const provider = createAnthropic({
   apiKey: process.env.ANTHROPIC_API_KEY,
 });
 
-// Model identifiers — update as model versions change.
-export const OPUS_MODEL_ID = 'claude-opus-4-7';
-export const SONNET_MODEL_ID = 'claude-sonnet-4-6';
+// Wire model identifiers — sourced from the single registry in ./models.
+export const OPUS_MODEL_ID = MODEL_IDS.opus;
+export const SONNET_MODEL_ID = MODEL_IDS.sonnet;
 
 // Opus 4.7 and Sonnet 4.6 deprecated the `temperature` parameter — Anthropic
 // rejects requests that include it. AI SDK v4 internally substitutes
