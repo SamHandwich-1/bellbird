@@ -1,11 +1,16 @@
 import Anthropic from '@anthropic-ai/sdk';
 import OpenAI from 'openai';
 
-export type Model = 'opus' | 'sonnet' | 'grok' | 'fable';
-export const MODELS: readonly Model[] = ['opus', 'sonnet', 'grok', 'fable'] as const;
+// `opus48` is the item-#2 migration CANDIDATE arm (Opus 4.8). It is deliberately
+// a separate key from `opus` (4.7) so the gate can run 4.7-vs-4.8 side-by-side
+// while production (lib/ai/models.ts) stays pinned to 4.7. Harness-only; this map
+// is independent of the production registry by design.
+export type Model = 'opus' | 'opus48' | 'sonnet' | 'grok' | 'fable';
+export const MODELS: readonly Model[] = ['opus', 'opus48', 'sonnet', 'grok', 'fable'] as const;
 
 export const MODEL_IDS: Record<Model, string> = {
   opus: 'claude-opus-4-7',
+  opus48: 'claude-opus-4-8',
   sonnet: 'claude-sonnet-4-6',
   grok: 'grok-4',
   fable: 'claude-fable-5',
@@ -63,8 +68,8 @@ export async function callModel(
 ): Promise<CallResult> {
   const t0 = Date.now();
 
-  if (model === 'opus' || model === 'sonnet' || model === 'fable') {
-    // Opus 4.7 + Sonnet 4.6 + Fable 5 deprecated `temperature`; Anthropic rejects
+  if (model === 'opus' || model === 'opus48' || model === 'sonnet' || model === 'fable') {
+    // Opus 4.7 + Opus 4.8 + Sonnet 4.6 + Fable 5 deprecated `temperature`; Anthropic rejects
     // requests that include it. The CLI flag still parses for parity with Grok
     // runs but is intentionally NOT forwarded here. No `thinking` param either —
     // Fable 5 rejects an explicit disabled; omission is the supported shape.
