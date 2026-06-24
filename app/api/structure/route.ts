@@ -1,4 +1,4 @@
-import { opus } from '@/lib/ai/anthropic';
+import { resolveForPhase } from '@/lib/ai/resolve';
 import { generateObjectGuarded, ParseGuardError } from '@/lib/ai/parse-guard';
 import { PHASE_2_SYSTEM_PROMPT } from '@/lib/ai/prompts/phase-2-structuring';
 import { structuredThesisSchema } from '@/lib/ai/schemas';
@@ -37,8 +37,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    const { model, dbLabel } = resolveForPhase(2);
     const { object, usage, guard } = await generateObjectGuarded({
-      model: opus,
+      model,
       system: PHASE_2_SYSTEM_PROMPT,
       schema: structuredThesisSchema,
       prompt: `Conversation transcript:\n\n${transcript}\n\nProduce the structured thesis record.`,
@@ -50,7 +51,7 @@ export async function POST(req: Request) {
       conversation_id: conversationId,
       role: 'assistant',
       content: JSON.stringify(object),
-      model: 'opus-4.8',
+      model: dbLabel,
       phase: 2,
       metadata: {
         input_tokens: usage.promptTokens ?? 0,

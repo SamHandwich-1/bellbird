@@ -1,5 +1,5 @@
 import { streamText, type CoreMessage } from 'ai';
-import { opus } from '@/lib/ai/anthropic';
+import { resolveForPhase } from '@/lib/ai/resolve';
 import { buildPhase1SystemPrompt } from '@/lib/ai/prompts/phase-1-development';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
@@ -88,8 +88,9 @@ export async function POST(req: Request) {
       ? lastUserMessage.content
       : null;
 
+  const { model, dbLabel } = resolveForPhase(1);
   const result = streamText({
-    model: opus,
+    model,
     system,
     messages: effectiveMessages,
     onError: ({ error }) => {
@@ -153,7 +154,7 @@ export async function POST(req: Request) {
         conversation_id: conversationId,
         role: 'assistant',
         content: text,
-        model: 'opus-4.8',
+        model: dbLabel,
         phase: 1,
         metadata: {
           input_tokens: usage.promptTokens ?? 0,

@@ -1,4 +1,4 @@
-import { opus } from '@/lib/ai/anthropic';
+import { resolveForPhase } from '@/lib/ai/resolve';
 import { generateObjectGuarded, ParseGuardError } from '@/lib/ai/parse-guard';
 import {
   PHASE_4_SYSTEM_PROMPT,
@@ -69,8 +69,9 @@ export async function POST(req: Request) {
   const prompt = promptParts.join('\n\n');
 
   try {
+    const { model, dbLabel } = resolveForPhase(4);
     const { object, usage, guard } = await generateObjectGuarded({
-      model: opus,
+      model,
       system: PHASE_4_SYSTEM_PROMPT,
       schema: adjudicationSchema,
       prompt,
@@ -97,7 +98,7 @@ export async function POST(req: Request) {
       conversation_id: conversationId,
       role: 'assistant',
       content: object.reasoning,
-      model: 'opus-4.8',
+      model: dbLabel,
       phase: 4,
       metadata: {
         input_tokens: usage.promptTokens ?? 0,

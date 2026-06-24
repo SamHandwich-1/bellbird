@@ -10,7 +10,8 @@
     "typecheck": "tsc --noEmit",
     "prompt-harness": "tsx --env-file=.env.local scripts/prompt-harness/run.ts",
     "test:parse-guard": "tsx lib/ai/parse-guard.test.ts",
-    "test:models": "tsx lib/ai/models.test.ts"
+    "test:models": "tsx lib/ai/models.test.ts",
+    "test:resolve": "tsx lib/ai/resolve.test.ts"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^1.0.6",

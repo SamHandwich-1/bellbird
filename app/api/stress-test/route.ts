@@ -1,4 +1,4 @@
-import { grok } from '@/lib/ai/xai';
+import { resolveForPhase } from '@/lib/ai/resolve';
 import { generateObjectGuarded, ParseGuardError } from '@/lib/ai/parse-guard';
 import { PHASE_3_SYSTEM_PROMPT } from '@/lib/ai/prompts/phase-3-stress-test';
 import { stressTestSchema } from '@/lib/ai/schemas';
@@ -49,8 +49,9 @@ export async function POST(req: Request) {
   }
 
   try {
+    const { model, dbLabel } = resolveForPhase(3);
     const { object, usage, guard } = await generateObjectGuarded({
-      model: grok,
+      model,
       system: PHASE_3_SYSTEM_PROMPT,
       schema: stressTestSchema,
       prompt: `Structured thesis to pressure-test:\n\n${JSON.stringify(draft, null, 2)}\n\nProduce the contrarian argument and disagreement matrix.`,
@@ -74,7 +75,7 @@ export async function POST(req: Request) {
       conversation_id: conversationId,
       role: 'assistant',
       content: object.contrarian_argument,
-      model: 'grok-4',
+      model: dbLabel,
       phase: 3,
       metadata: {
         input_tokens: usage.promptTokens ?? 0,
