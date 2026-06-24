@@ -802,3 +802,89 @@ label's eventual fate. Editing the prose in either direction would be a
 Phase-4 prompt change that voids verification — out of scope this turn.
 
 **Code commit:** 239ae35 (registry + test + anthropic/xai repoint + npm script).
+
+---
+
+## 22. Opus 4.7 → 4.8 promotion — gated model swap (2026-06-24)
+
+**Status:** ✅ Gate ruled PASS (2026-06-24); promotion shipped. Swap commit 3b0aea6.
+**Scope:** Bellbird-side opus phases bumped 4.7 → 4.8 in lockstep. Model swap —
+voids prior prompt verification (item-19 doctrine); gated before promotion.
+
+**Bar (recorded honestly).** The gate proves 4.8 is ACCEPTABLE under the
+existing 4.7-era Phase-4 prompt, NOT optimal for 4.8. Phases 1 & 2 ride the bump
+on the single-`opus`-binding fact + item-18 live parse-guards, not a fixture gate
+(no fixture gate is possible for open dialogue / mechanical structuring). A
+4.8-specific prompt re-tune is a separate future turn. The live Phase 2→3→4 smoke
+on :3002 (operator-driven, 2026-06-24) ran clean in production tool-mode — Grok
+challenged and the thesis landed — covering the one surface the harness could
+not (raw-text judgment vs `generateObject` tool-mode).
+
+**Wire string (A.1).** GET /v1/models serves `claude-opus-4-8` ("Claude Opus
+4.8", created 2026-05-28) — alias only, no dated 4.8 snapshot. Pinned the alias.
+**Canary timestamp: 2026-05-28** — a created-at change on the alias re-voids this
+verification (item-19 residual #4); rerun the boundary trio before any
+consequential pipeline change if it moves.
+
+**Gate (Phase A).** Candidate arm `opus48` added to the harness only
+(clients.ts + harness pricing); production registry stayed 4.7 throughout. Eval
+prompt `prompts/eval-opus48-phase-4.md` extracted byte-equal to the live trimmed
+`PHASE_4_SYSTEM_PROMPT` ("Opus 4.8" label intact; `file === live` verified, 2026
+bytes). Corroborating diff vs `eval-fable-phase-4.md` showed the label delta plus
+one incidental trailing-newline byte the Fable scratch carried — anchor is the
+live .ts, fable is corroboration only (S2).
+
+Dual-model N=3 single-shot per `phase-4-input.md`, both opus48 (4.8) and opus
+(4.7), fragments 7–13. 42/42 `stop_reason=end_turn`; two transient
+opus/9 `Connection error` infra-fails reran clean (not misses, item-19 taxonomy).
+
+| Frag | Pole | 4.7 ×3 | 4.8 ×3 |
+|---|---|---|---|
+| 7 private-credit | — | PROCEED | PROCEED |
+| 8 ai-capex-beta | — | PROCEED | PROCEED |
+| 9 japan-megabank | — | PROCEED | PROCEED |
+| 10 gaming-dispersion | — | STRESS_TEST | STRESS_TEST |
+| 11 uranium | PROCEED | PROCEED | PROCEED |
+| 12 mall-REITs | STRESS_TEST | STRESS_TEST | STRESS_TEST |
+| 13 veridian | DISCARD | DISCARD | DISCARD |
+
+4.8 hit all three locked poles, agreed with 4.7 on all four no-pole fragments,
+3/3 stable everywhere. Frag-11 D4.6 attractor clean — all three 4.8 runs
+exercised the shifts/narrows carve-in explicitly. **D4.7 recurs on 4.8:** frag-12
+4.8 routes recovery through the author-excluded A-mall-scarcity / redevelopment
+expressions (runs 1, 3) — same verdict (STRESS_TEST), same route-variance
+question ruled acceptable for Fable in item 19; ruled acceptable again here.
+Format drift stochastic (4.7 mostly JSON, 4.8 mostly prose) — irrelevant to
+production tool-mode behind item-18 guards. Total gate cost ~$0.89 (4.8 column
+priced at the confirmed 5/25; 4.7 at the corrected 5/25).
+
+**Promotion (Phase B).** `MODEL_IDS.opus → claude-opus-4-8`. THREE opus dbLabels
+→ 'opus-4.8' (chat:156, structure:53, adjudicate:100); 'opus-4.7' kept in
+pricing/queries for historical rows. **Correction to the plan's "four dbLabels":
+stress-test:77 emits 'grok-4' (Phase-3 writer), left untouched.** Added
+`'opus-4.8': {5.0, 25.0}` (standard rate, not fast mode) to pricing.ts AND the
+develop-queries init key — the pricing→queries leg is tsc-coupled, the routes→
+pricing leg is not (hand-verified, S1). `models.test.ts` opus expectation flipped
+to claude-opus-4-8 — that diff is the swap record. No prompt edit (the "Opus 4.8"
+label, left untouched in item 21 as behaviour-neutral, is now true). 9/9
+test:models, typecheck/build clean, dev boots on :3002.
+
+**Fork rulings carried.** Fork 1 → lockstep (single `opus` binding makes "Phase-4
+only" strictly more code). Fork 2 → harness opus rate corrected 15/75 → 5/25 this
+turn (item-19 footnote; was overstating gate cost ~3×); production pricing.ts
+'opus-4.7' row left at stale 15/75 — latent (no live consumer:
+`estimateCostUsd`/`getTokenUsageFor` have zero callers), separate hygiene, not
+folded into the swap diff.
+
+**Commit isolation.** Three commits: (1) Phase A gate infra (opus48 arm + eval
+prompt + harness rate fix), (2) the Phase B production swap ISOLATED, (3) this
+log entry. Rollback of the swap is `git revert 3b0aea6` — leaves the gate arm
+intact; both pricing keys coexist, so any `opus-4.8` rows written in the interim
+still attribute.
+
+**Residuals carried forward.** Challenge path (buildChallengeContext)
+harness-untested on 4.8 (item-19 #3) — though the live smoke exercised it once.
+Cost machinery still dead code. Canary on the 2026-05-28 alias timestamp.
+
+**Code commits:** 01556f6 (gate infra: harness arm + rate fix + eval prompt),
+3b0aea6 (production swap).
