@@ -82,6 +82,7 @@ export async function getTokenUsageFor(
   const empty = (): TokenUsage => ({ input_tokens: 0, output_tokens: 0 });
   const totals: UsageBreakdown = {
     'opus-4.7': empty(),
+    'opus-4.8': empty(),
     'sonnet-4.6': empty(),
     'grok-4': empty(),
   };

@@ -9,7 +9,7 @@
 // (scripts/prompt-harness/clients.ts) so a candidate model can diverge from
 // production during a migration gate.
 export const MODEL_IDS = {
-  opus: 'claude-opus-4-7',
+  opus: 'claude-opus-4-8',
   sonnet: 'claude-sonnet-4-6',
   grok: 'grok-4',
 } as const;

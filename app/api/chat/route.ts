@@ -153,7 +153,7 @@ export async function POST(req: Request) {
         conversation_id: conversationId,
         role: 'assistant',
         content: text,
-        model: 'opus-4.7',
+        model: 'opus-4.8',
         phase: 1,
         metadata: {
           input_tokens: usage.promptTokens ?? 0,

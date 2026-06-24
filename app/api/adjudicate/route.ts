@@ -97,7 +97,7 @@ export async function POST(req: Request) {
       conversation_id: conversationId,
       role: 'assistant',
       content: object.reasoning,
-      model: 'opus-4.7',
+      model: 'opus-4.8',
       phase: 4,
       metadata: {
         input_tokens: usage.promptTokens ?? 0,

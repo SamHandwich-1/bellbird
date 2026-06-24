@@ -20,7 +20,7 @@ import { grok, GROK_MODEL_ID } from './xai';
 // registry drifts. A model swap (e.g. the #2 Opus 4.8 bump) intentionally edits
 // these expectations — that edit IS the documented record of the swap.
 const HISTORICAL = {
-  opus: 'claude-opus-4-7',
+  opus: 'claude-opus-4-8',
   sonnet: 'claude-sonnet-4-6',
   grok: 'grok-4',
 } as const;
@@ -45,7 +45,7 @@ function test(name: string, fn: () => void | Promise<void>): Promise<void> {
   console.log('models tests\n');
 
   // 1. Registry constants are byte-equal to the historical wire literals.
-  await test('MODEL_IDS.opus === claude-opus-4-7', () => {
+  await test('MODEL_IDS.opus === claude-opus-4-8', () => {
     assert.equal(MODEL_IDS.opus, HISTORICAL.opus);
   });
   await test('MODEL_IDS.sonnet === claude-sonnet-4-6', () => {
@@ -68,7 +68,7 @@ function test(name: string, fn: () => void | Promise<void>): Promise<void> {
 
   // 3. The built wrapper instances carry the unchanged id on .modelId — proves
   //    the model that resolves on the wire is byte-identical post-refactor.
-  await test('opus instance .modelId === claude-opus-4-7', () => {
+  await test('opus instance .modelId === claude-opus-4-8', () => {
     assert.equal(opus.modelId, HISTORICAL.opus);
   });
   await test('sonnet instance .modelId === claude-sonnet-4-6', () => {
