@@ -468,6 +468,8 @@ Logged at end of Turn B (27 May 2026). Each is a deferred slice of something tha
 
 **Attachment rendering in conversation history.** The attachments table persists rows correctly and links them to messages, but DevelopChat doesn't render any indicator on saved messages showing what was attached. On page reload, attached files disappear from the UI even though they shaped the conversation. Fix: render attachment chips under saved messages, showing filename + click-to-preview (or click-to-download) affordance. Same Develop polish turn.
 
+**Phase 2 trigger auto-extraction.** Phase 2 should auto-extract trigger conditions (entry-triggers + invalidation/falsifiers) from the Develop conversation into a structured triggers field. Currently manual-only ("Add Trigger") — theses land with 0 triggers despite naming them in discussion (Two-Toll: 30 June Pentagon restriction, 2027 extension, binary US-escalation invalidation, reserve-deploys-on-dislocation entry logic). Bellbird structuring concern (extraction), distinct from Wedgetail (firing). Touches Phase 2 Zod schema + structuring prompt (verification implications) + Library triggers UI; taxonomy decision needed — entry-triggers vs invalidation/falsifiers as one bucket or two.
+
 ---
 
 ## Recommended build sequence
