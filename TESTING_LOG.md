@@ -890,3 +890,102 @@ Cost machinery still dead code. Canary on the 2026-05-28 alias timestamp.
 
 **Code commits:** 01556f6 (gate infra: harness arm + rate fix + eval prompt),
 3b0aea6 (production swap).
+
+---
+
+## 23. Level-3 selector slice 1 — per-phase request-time resolver (2026-06-25)
+
+**Status:** ✅ Shipped. Code commit dc4bfcf. Behaviour-preserving refactor —
+no model swap, no value changed, no gate triggered.
+**Scope:** Request-time model *resolution substrate* only. No DB, no UI, no gate
+registry. Four routes rewired from `import { opus|grok }` + a hardcoded dbLabel
+literal to a single `resolveForPhase(N)` call returning `{ model, dbLabel }`.
+
+First runtime consumer of the `PHASE_MODELS` map that item 21 deliberately
+deferred (783-787: "has no runtime consumer while the routes are untouched").
+Slice 1 of a 3-slice cut; slices 2/3 add the DB source and the UI/gate (map below).
+
+**Shipped.**
+- `lib/ai/model-registry.ts` — per-model capability descriptors
+  (`MODEL_REGISTRY`: provider, wireId, dbLabel, pricingKey, requestShape) keyed
+  by versioned `ModelKey` (`opus-4.8` | `grok-4`), plus the `PHASE_MODELS` seed
+  (`1/2/4 → opus-4.8`, `3 → grok-4`). Pure data, zero imports, same discipline
+  as `models.ts`. wireId and dbLabel are SEPARATE fields by design — item 21's
+  two keyspaces (772-781) stay untied; the descriptor co-locates, does not unify.
+- `lib/ai/resolve.ts` — sync `resolveForPhase(phase) → { model, dbLabel }`. Binds
+  each registry key to today's exact built instance (`opus`/`grok` imported by
+  identity from `./anthropic` + `./xai`), so the resolved instance IS the live
+  singleton — request-shape (`withoutTemperature` for opus, raw for grok) carried
+  by instance identity, not re-derived. SYNC by design this slice (no DB read).
+- Four routes rewired for `model` + `dbLabel` as a resolved pair: `chat`
+  `resolveForPhase(1)`, `structure` (2), `stress-test` (3), `adjudicate` (4).
+- `package.json` `test:resolve` script (pure add — no name collision).
+
+**Byte-identity — provable by construction, not asserted.** The substitution
+changes only the *source* of two values per route (inline literal → resolver);
+both values are byte-identical:
+- *model:* `resolveForPhase(p).model === ` the same `opus`/`grok` module singleton
+  the route imported before. Same module (the `@/lib/ai/*` alias and resolve.ts's
+  relative `./*` resolve to one instance), so identity holds — no second
+  instantiation, no request-shape drift.
+- *dbLabel:* `MODEL_REGISTRY[key].dbLabel` equals the prior literal verbatim
+  (`'opus-4.8'` for phases 1/2/4, `'grok-4'` for phase 3).
+
+**Verification.**
+
+| Check | Result |
+|---|---|
+| `npm run test:resolve` | 18/18 — per-phase `.model` identity (1/2/4 === opus, 3 === grok), `.modelId`, `dbLabel`; + 3 structural locks |
+| `npm run test:models` | 9/9, **unchanged** (no edit; wire-id layer untouched) |
+| `npm run typecheck` (`tsc --noEmit`) | clean |
+| `npm run build` | succeeded, all 20 routes / 8 API routes |
+| Live smoke 2→3→4 (:3002, operator, 2026-06-25) | clean — Phase 3 wrote a `grok-4` row with Grok challenging; thesis landed; chat user-insert stayed `model: null` |
+
+The three structural locks in `test:resolve` (the load-bearing assertions):
+1. **registry ↔ instance wireId** — `MODEL_REGISTRY[k].wireId === <instance>.modelId`
+   for both keys (`claude-opus-4-8`, `grok-4`).
+2. **pricingKey ∈ MODEL_PRICING** — both descriptor `pricingKey`s resolve in
+   `pricing.ts` (no cost-attribution footgun).
+3. **PHASE_MODELS totality** — phases `{1,2,3,4}` all present, every value a real
+   registry key.
+
+**Telemetry unchanged.** No route passes `modelLabel`, so `parse-guard.ts:115`
+stays `params.model.modelId` (wire-id-derived) — unchanged, since the resolved
+instance is the same one. The persisted `messages.model` column is the resolved
+`dbLabel`, value-identical to the prior literal. Both channels neutral.
+
+**Slice map forward.**
+- **Slice 2** — DB `model_config` becomes the authoritative per-request source,
+  validated against `MODEL_REGISTRY` + a **read-time `GATE_PASSES` check**;
+  resolver goes async; degrades to `PHASE_MODELS` (seed = last-known-good
+  fallback) on any DB failure. Invariant: a DB-sourced model never ships without
+  the gate enforcing it — enforcement lands in the SAME slice as the DB source.
+- **Slice 3** — authed `/settings` UI for per-phase selection + **write-time
+  gate** (no model reaches `model_config` without passing).
+- **Named convergence** — retire `MODEL_IDS` (`models.ts`) into `MODEL_REGISTRY`
+  as the single wire-id source; the two registries co-exist only until then.
+
+**Decisions locked (carried into slices 2/3).**
+- **#1 grandfather + per-phase evidence types.** Existing pins grandfathered;
+  new pins require phase-appropriate evidence — Phase 1 & 3 **operator-attested
+  only** (no fixture gate possible for open dialogue / adversarial raw-text);
+  Phase 2 **schema-conformance**; Phase 4 **verdict harness** (the boundary-trio
+  gate of item 22).
+- **#2 code-committed `GATE_PASSES` + `evidenceRef`.** The gate registry is
+  source-committed (not DB rows), each pass carrying a reference to its evidence.
+- **#5 `PHASE_MODELS` = seed + fallback** — not replaced by the DB; it is the
+  validation target and the degrade target.
+
+**Residual.**
+- **Four `resolveForPhase(N)` literals unguarded by types.** Nothing stops
+  `resolveForPhase(2)` in the stress-test route compiling and silently returning
+  opus — the phase argument is the one value the type system can't check.
+  Verified THIS slice by diff eyeball + live 2→3→4 smoke (operator, 2026-06-25),
+  not by a type. A per-route phase assertion is a candidate hardening for a later
+  slice.
+- **`sonnet-4.6` omitted from `MODEL_REGISTRY`** — no phase consumes it
+  (`MODEL_IDS` still carries it for the built `sonnet` export). Its fate is
+  decided at the convergence slice, when `MODEL_IDS` folds into the registry.
+
+**Code commit:** dc4bfcf (3 new files + `test:resolve` script + 4 route edits;
+zero DB / migration / data).
