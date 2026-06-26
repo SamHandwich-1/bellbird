@@ -989,3 +989,107 @@ instance is the same one. The persisted `messages.model` column is the resolved
 
 **Code commit:** dc4bfcf (3 new files + `test:resolve` script + 4 route edits;
 zero DB / migration / data).
+
+
+## 24. Pre-flight fact pack slice 1 — create-time FRED macro snapshot (2026-06-26)
+
+**Status:** ✅ Shipped. Code commit d0a794d. **NOT byte-identical — a deliberate
+Phase-1 behaviour change** (theses are now developed against live macro from
+message one). Slice 1 of 2; slice 2 (Polygon + ticker extraction + right-rail
+wiring) deferred (map below).
+
+**Scope:** A one-shot LIVE macro snapshot assembled at conversation start, persisted
+on the conversation row, and injected into the Phase-1 system prompt every turn.
+Pure DB read of already-populated data — zero new external API. No tickers, no
+Polygon, no UI change this slice.
+
+**Reconciles with item 6.** Item 6 ("Live data fetching in Develop chat") decided
+*not* pre-flight — fetch *during* the conversation once tickers surface. The
+2026-05-25 operator ruling overrode that for the macro-grounding case: ground the
+session against current reality from message one, so a thesis can't clear the
+pipeline and then be disconfirmed by live data. The during-conversation,
+ticker-driven fetching item 6 describes is now **slice 2**, not abandoned.
+
+**Shipped.**
+- `db/migrations/0007_conversation_fact_pack.sql` — additive nullable
+  `conversations.fact_pack JSONB`. No RLS change (conversations policy is
+  `FOR ALL TO authenticated USING (true) WITH CHECK (true)` — column-agnostic;
+  table-level grants cover new columns). `schema.sql` not back-edited (base +
+  incremental convention, cf. `iteration` in 0004).
+- `lib/ai/fact-pack.ts` — `HEADLINE_SERIES` (10, render order), `buildMacroFactPack`
+  (latest row per series from `macro_indicators`, dedupe idiom mirrored from
+  `getLatestCycleReadings`; + 3 `getMergedCycleReadings` gauges), `renderFactPack`
+  (delimited "LIVE MARKET & MACRO STATE — as of <ts>" block carrying its own
+  ground-truth framing). **≤500-token budget**; z(30y) kept (turns levels into
+  regime signal cheaply).
+  - Pack = 3 cycle readings + 10 headline series: Fed Funds, 2s10s, 30Y, DXY,
+    HY OAS, VIX, Core CPI (yoy), Unemployment, Real GDP, CAPE. HY-only (no IG
+    series exists); CAPE in as valuation anchor; Buffett out (token economy).
+- `app/(app)/develop/actions.ts` — `createConversation` persists the pack at create
+  (non-fatal; failure leaves null → route backfills).
+- `app/api/chat/route.ts` — reads `conversations.fact_pack`; if null, builds +
+  persists once via admin client, then injects. **Fetch-once read path:** once the
+  pack exists, later turns read the stored pack and re-inject without re-querying
+  `macro_indicators`.
+- `lib/ai/prompts/phase-1-development.ts` — `buildPhase1SystemPrompt(theses,
+  factPackText?)`; block slots after the library, before suggestions. Absent arg →
+  prompt byte-identical to its pre-fact-pack form (the lone runtime caller is the
+  chat route; the prompt-harness fixture is unaffected unless updated).
+
+**Macro-only by necessity — the load-bearing finding.** There is no thesis-anchored
+conversation at create. `createConversation` inserts `thesis_id = NULL`; the thesis
+row is created only at `commitToLibrary` (after Phase 4). So no linked thesis and no
+position tickers exist at message one — every Develop conversation is born fresh.
+Slice 1 therefore needs no ticker source; slice 2's ticker source is reframed from
+"linked-thesis positions" to "tickers extracted from the conversation," tying it to
+the trigger-extraction problem.
+
+**Write-once on the happy path / idempotent at-least-once under the null-pack race.**
+Create-time write persists the pack, so backfill normally never fires (true
+write-once). For a null row (legacy conversation, or a create-time write that hit
+its catch), two concurrent turns can both build + write — harmless: MVCC gives no
+torn read, jsonb UPDATE is atomic last-writer-wins, both write complete valid packs,
+cost is one redundant idempotent read. No turn goes pack-less from the race.
+
+**Two named behaviours (by design, not defects).**
+- *Frozen-on-resume staleness.* The pack is frozen at create; a conversation
+  resumed days later reasons against day-one macro. Intended — one-shot grounding,
+  not surveillance. Refresh-on-resume is out of scope (the continuous direction).
+- *Iterate does not re-snapshot.* `resetToPhase1` (item 14) bumps iteration and
+  re-enters Phase 1 but `fact_pack` is conversation-level and set once — an iterated
+  re-run injects the original frozen pack, not fresh macro.
+
+**Verification.**
+
+| Check | Result |
+|---|---|
+| Fresh-DB migration replay (Docker PG16, schema → dated → 0001–0007) | 0007 applied clean; `conversations.fact_pack` = jsonb, nullable; JSONB round-trip (insert w/o thesis_id → read back) verified |
+| Structural assertions (render + injection + headline set) | 15/15 |
+| `npm run typecheck` (`tsc --noEmit`) | clean |
+| `npm run build` | succeeded, all routes |
+| Behavioural smoke — contradicting premise (:3002, operator, 2026-06-26) | **PASSED** (below) |
+
+**Smoke — passed strongly.** False premise "the yield curve is deeply inverted":
+Opus stopped at the premise in turn one, cited the live figure (**2s10s +0.31,
+z −0.42, positive**), and volunteered three more pack series to surface a signal
+conflict (**HY 2.76 / z −0.99; IPMAN +1.43% YoY; unemployment 4.3 / z −0.67**),
+then pinned the thesis against the existing **Private Credit Slow Burn** book entry.
+The pack reads as ground-truth-now exactly as designed.
+
+**Cross-ref.** Delivers the *data-fetching* sub-piece of item 17 (Phase-1 prompt
+overhaul); item 17's remaining scope (triggers solicitation, conviction capture)
+stays deferred. Origin decision: item 6 (reconciled above).
+
+**Deferred — slice 2 / backlog.**
+- Slice 2: Polygon (Massive) live prices + conversation-ticker extraction + wiring
+  the two right-rail panels (`ContextPane` "Tickers · live" / "Recent fetches").
+  Where name-level price disconfirmation lands; materially larger than the brief
+  assumed (owns the whole ticker-source problem).
+- Series-adds: real-yield (DFII10) / breakeven (T10YIE) — operator wants real yields
+  in the pack and over 30Y; IG OAS as the HY companion. Each is a net-new FRED
+  series (registry + backfill) before it can join the pack.
+- `db/policies.sql` ↔ `0006_triggers.sql` double-create the `triggers` policy;
+  surfaces only on a from-zero replay (predates this slice; lift-relevant for any
+  future fresh-provision script).
+- Product-flow gap (standalone): no entry point to revisit / further-develop an
+  existing library thesis — every Develop conversation is born fresh.
