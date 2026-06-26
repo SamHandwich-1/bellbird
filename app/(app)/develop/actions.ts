@@ -4,6 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { redirect } from 'next/navigation';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
+import { buildMacroFactPack } from '@/lib/ai/fact-pack';
 import type { StructuredThesis } from '@/lib/ai/schemas';
 
 type ActionResult<T = void> = T extends void
@@ -23,6 +24,16 @@ export async function createConversation(): Promise<{ id: string } | { error: st
     .select('id')
     .single();
   if (error) return { error: error.message };
+
+  // Pre-flight fact pack — assemble and persist the LIVE macro snapshot at
+  // conversation start. Non-fatal: a failure leaves fact_pack null and the
+  // chat route backfills it once on the first turn.
+  try {
+    const pack = await buildMacroFactPack(supabase);
+    await supabase.from('conversations').update({ fact_pack: pack }).eq('id', data.id);
+  } catch (e) {
+    console.error('[createConversation] fact pack build failed', e);
+  }
 
   revalidatePath('/develop');
   return { id: data.id };

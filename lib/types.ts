@@ -135,8 +135,35 @@ export interface Conversation {
   title: string | null;
   status: ConversationStatus;
   iteration: number;
+  fact_pack: FactPack | null;
   created_at: string;
   updated_at: string;
+}
+
+// Pre-flight fact pack — a one-shot LIVE macro snapshot assembled at
+// conversation start and injected into the Phase-1 system prompt. Frozen for
+// the life of the conversation (one-shot grounding, not surveillance).
+export interface FactPackMacroRow {
+  series_id: string;
+  display_name: string;
+  value: number | null;
+  yoy_change: number | null;
+  z_score_30y: number | null;
+  observation_date: string;
+  display_as: 'level' | 'yoy_pct';
+}
+
+export interface FactPackCycle {
+  cycle_name: CycleName;
+  status: CycleStatus;
+  reading: string;
+  detail: string | null;
+}
+
+export interface FactPack {
+  as_of: string; // ISO timestamp the snapshot was assembled
+  cycles: FactPackCycle[];
+  macro: FactPackMacroRow[];
 }
 
 export interface Message {

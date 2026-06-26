@@ -49,15 +49,22 @@ function thesisOneLiner(t: Thesis): string {
   return `- ${parts.join(' · ')}`;
 }
 
-export function buildPhase1SystemPrompt(theses: Thesis[]): string {
+export function buildPhase1SystemPrompt(
+  theses: Thesis[],
+  factPackText?: string,
+): string {
   const libraryBlock = theses.length
     ? `${LIBRARY_CONTEXT_INTRO.replace('${thesesCount}', String(theses.length))}\n\n${theses.map(thesisOneLiner).join('\n')}`
     : 'Library is empty.';
 
+  // The fact pack (when present) carries its own ground-truth framing; it slots
+  // in after the library, before the suggestions instruction. Absent → omitted,
+  // leaving the prompt byte-identical to its pre-fact-pack form.
   return [
     PHASE_1_ROLE.trim(),
     VOICE_RULES.trim(),
     libraryBlock.trim(),
+    ...(factPackText ? [factPackText.trim()] : []),
     SUGGESTIONS_INSTRUCTION.trim(),
   ].join('\n\n');
 }

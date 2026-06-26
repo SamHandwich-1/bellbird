@@ -1,10 +1,11 @@
 import { streamText, type CoreMessage } from 'ai';
 import { resolveForPhase } from '@/lib/ai/resolve';
 import { buildPhase1SystemPrompt } from '@/lib/ai/prompts/phase-1-development';
+import { buildMacroFactPack, renderFactPack } from '@/lib/ai/fact-pack';
 import { createClient } from '@/lib/supabase/server';
 import { createAdminClient } from '@/lib/supabase/admin';
 import { getAttachmentSignedUrl } from '@/lib/supabase/storage-server';
-import type { Thesis } from '@/lib/types';
+import type { FactPack, Thesis } from '@/lib/types';
 import type { UploadedAttachment } from '@/lib/supabase/storage';
 
 export const runtime = 'nodejs';
@@ -54,7 +55,30 @@ export async function POST(req: Request) {
 
   const { data: thesesData } = await supabase.from('theses').select('*');
   const theses = (thesesData ?? []) as Thesis[];
-  const system = buildPhase1SystemPrompt(theses);
+
+  // Pre-flight fact pack. Read the persisted snapshot; if absent (legacy
+  // conversation, or a create-time build that failed into its catch), build
+  // and persist it once here. Once present, every later turn reads the stored
+  // pack and re-injects it without re-querying macro_indicators — fetch-once.
+  const { data: convPack } = await supabase
+    .from('conversations')
+    .select('fact_pack')
+    .eq('id', conversationId)
+    .maybeSingle();
+  let pack = (convPack?.fact_pack as FactPack | null) ?? null;
+  if (!pack) {
+    try {
+      pack = await buildMacroFactPack(supabase);
+      await createAdminClient()
+        .from('conversations')
+        .update({ fact_pack: pack })
+        .eq('id', conversationId);
+    } catch (e) {
+      console.error('[api/chat] fact pack backfill failed', e);
+      pack = null;
+    }
+  }
+  const system = buildPhase1SystemPrompt(theses, pack ? renderFactPack(pack) : undefined);
 
   // Inline binary attachments into the most recent user turn as multi-part
   // content blocks so Opus sees image / PDF context alongside the text.
